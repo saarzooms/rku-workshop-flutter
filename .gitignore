@@ -1,0 +1,31 @@
+# Environment & Secrets
+.env
+campus_event_api/.env
+**/google-services.json
+**/GoogleService-Info.plist
+**/*firebase-adminsdk*.json
+*.jks
+*.keystore
+key.properties
+
+# PHP & Composer
+campus_event_api/vendor/
+campus_event_api/storage/logs/*.log
+
+# Flutter / Dart
+.dart_tool/
+.packages
+build/
+campus_event_app/.dart_tool/
+campus_event_app/build/
+campus_event_app/.flutter-plugins
+campus_event_app/.flutter-plugins-dependencies
+campus_event_app/android/.gradle/
+campus_event_app/android/local.properties
+
+# IDE
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db

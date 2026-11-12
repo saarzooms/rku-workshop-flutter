@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Codelab: Campus Event &amp; Attendance Management System (Flutter + PHP)</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" defer></script>
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --primary-light: #eff6ff;
+      --accent: #0d9488;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --border: #e2e8f0;
+      --code-bg: #0f172a;
+      --code-fg: #e2e8f0;
+      --warn-bg: #fffbeb;
+      --warn-border: #f59e0b;
+      --ok-bg: #ecfdf5;
+      --ok-border: #10b981;
+      --sidebar-w: 290px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+    }
+    header.topbar {
+      position: fixed; top: 0; left: 0; right: 0; height: 60px; z-index: 50;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 1.05rem; color: var(--primary); }
+    .menu-btn {
+      display: none; background: none; border: 1px solid var(--border); border-radius: 8px;
+      padding: 6px 10px; cursor: pointer; font-size: 1rem;
+    }
+    .progress-wrap { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--muted); }
+    .progress-bar { width: 140px; height: 8px; background: #e2e8f0; border-radius: 99px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--accent); width: 7%; transition: width 0.25s ease; }
+
+    aside.sidebar {
+      position: fixed; top: 60px; left: 0; bottom: 0; width: var(--sidebar-w);
+      background: var(--surface); border-right: 1px solid var(--border);
+      overflow-y: auto; padding: 14px 10px 80px; z-index: 40;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+      padding: 10px 12px; margin-bottom: 4px; border: none; border-radius: 10px;
+      background: transparent; color: var(--muted); cursor: pointer; font-size: 0.9rem;
+    }
+    .nav-item:hover { background: var(--bg); color: var(--text); }
+    .nav-item.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+    .step-num {
+      width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 0.78rem; font-weight: 700; background: #e2e8f0; color: var(--text);
+    }
+    .nav-item.active .step-num { background: var(--primary); color: #fff; }
+    .nav-item.done .step-num { background: var(--accent); color: #fff; }
+
+    main.content {
+      margin-left: var(--sidebar-w); margin-top: 60px;
+      padding: 28px 24px 100px; max-width: 960px;
+    }
+    .chapter { display: none; }
+    .chapter.active { display: block; }
+    .card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      padding: 24px 28px; margin-bottom: 20px; box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+    }
+    .meta-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600;
+      padding: 4px 10px; border-radius: 99px; background: var(--primary-light); color: var(--primary);
+    }
+    h1 { margin: 0 0 8px; font-size: 1.75rem; color: var(--text); }
+    h2 { margin-top: 24px; font-size: 1.2rem; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+    h3 { margin-top: 18px; font-size: 1.02rem; color: var(--text); }
+
+    .callout {
+      border-left: 4px solid var(--primary); background: var(--primary-light);
+      padding: 12px 16px; border-radius: 0 10px 10px 0; margin: 14px 0;
+    }
+    .callout.warn { border-left-color: var(--warn-border); background: var(--warn-bg); }
+    .callout.ok { border-left-color: var(--ok-border); background: var(--ok-bg); }
+
+    .code-wrap { position: relative; margin: 14px 0; }
+    .copy-btn {
+      position: absolute; top: 8px; right: 8px; background: #1e293b; color: #f8fafc;
+      border: 1px solid #334155; border-radius: 6px; padding: 4px 10px;
+      font-size: 0.75rem; cursor: pointer;
+    }
+    .copy-btn:hover { background: #334155; }
+    pre {
+      margin: 0; background: var(--code-bg); color: var(--code-fg);
+      padding: 16px; border-radius: 10px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;
+    }
+    code { font-family: "Cascadia Code", "Fira Code", Consolas, monospace; }
+    :not(pre) > code { background: #e2e8f0; color: #0f172a; padding: 2px 6px; border-radius: 5px; font-size: 0.88em; }
+
+    details {
+      border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px;
+      margin: 12px 0; background: #f8fafc;
+    }
+    summary { font-weight: 600; cursor: pointer; color: var(--primary); }
+    .checklist label { display: flex; align-items: flex-start; gap: 8px; margin: 6px 0; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.9rem; }
+    th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; }
+    th { background: #f1f5f9; }
+
+    .footer-nav {
+      position: fixed; bottom: 0; left: var(--sidebar-w); right: 0; height: 64px;
+      background: var(--surface); border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; padding: 0 24px; z-index: 30;
+    }
+    .btn {
+      padding: 9px 18px; border-radius: 10px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--text); font-weight: 600; cursor: pointer;
+    }
+    .btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    @media (max-width: 900px) {
+      .menu-btn { display: inline-block; }
+      aside.sidebar { transform: translateX(-100%); transition: transform 0.2s ease; }
+      aside.sidebar.open { transform: translateX(0); }
+      main.content, .footer-nav { margin-left: 0; left: 0; }
+    }
+    @media print {
+      header.topbar, aside.sidebar, .footer-nav, .copy-btn { display: none !important; }
+      main.content { margin: 0; padding: 0; max-width: 100%; }
+      .chapter { display: block !important; page-break-after: always; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <button class="menu-btn" id="menuBtn" aria-label="Toggle chapters">&#9776;</button>
+    <span>Campus Event &amp; Attendance Codelab</span>
+  </div>
+  <div class="progress-wrap">
+    <span id="progressText">Step 1 of 14</span>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+</header>
+
+<aside class="sidebar" id="sidebar"></aside>
+
+<main class="content" id="contentRoot">
+
+  <!-- CHAPTER 1 -->
+  <section class="chapter active" data-title="1. Introduction" data-time="20 min">
+    <div class="card">
+      <div class="meta-row">
+        <span class="badge">Chapter 1</span>
+        <span class="badge">Est. 20 min</span>
+        <span class="badge">Workshop Overview</span>
+      </div>
+      <h1>Build a Campus Event &amp; Attendance Management System</h1>
+      <p><strong>Learning Objective:</strong> Understand the real-world problem, system scope, user roles, and full-stack architecture you will build over this 8–10 hour workshop.</p>
+      <div class="callout">
+        <strong>Why are we doing this?</strong> Universities run dozens of seminars, workshops, and hackathons every semester. Paper attendance sheets are slow and easy to forge. You will build an end-to-end digital solution with <strong>Flutter</strong>, <strong>PHP 8</strong>, <strong>MySQL</strong>, <strong>QR Codes</strong>, and <strong>Firebase Cloud Messaging (FCM)</strong>.
+      </div>
+      <h2>What You Will Build</h2>
+      <ul>
+        <li><strong>Student Experience:</strong> Discover events, search &amp; filter by category, register with capacity checks, scan organizer QR codes to mark attendance, and receive push notifications.</li>
+        <li><strong>Organizer Experience:</strong> Create/edit/cancel events, view registration counts, generate time-limited attendance QR codes, view attendance reports, and notify registrants.</li>
+        <li><strong>Admin Experience:</strong> Seeded campus administrator account with an overview dashboard of users, events, registrations, and attendance.</li>
+      </ul>
+      <h2>Technologies Used</h2>
+      <table>
+        <tr><th>Layer</th><th>Technology</th><th>Why We Chose It</th></tr>
+        <tr><td>Mobile App</td><td>Flutter 3.x (Dart, Material 3)</td><td>Fast UI iteration with Hot Reload and strong typing.</td></tr>
+        <tr><td>Backend API</td><td>PHP 8.x (PDO, JSON REST)</td><td>Zero-framework clarity, easy local setup, portable hosting.</td></tr>
+        <tr><td>Database</td><td>MySQL 8 / MariaDB</td><td>Relational integrity with Foreign Keys and Unique Constraints.</td></tr>
+        <tr><td>Push Notifications</td><td>Firebase Cloud Messaging</td><td>Reliable Android push delivery without making Firebase our primary DB.</td></tr>
+      </table>
+      <h2>Checkpoint</h2>
+      <ul>
+        <li>Can you name the 3 user roles in this application?</li>
+        <li>Why does the backend remain the single source of truth for attendance verification?</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- CHAPTER 2 -->
+  <section class="chapter" data-title="2. Prerequisites & Setup" data-time="35 min">
+    <div class="card">
+      <div class="meta-row">
+        <span class="badge">Chapter 2</span>
+        <span class="badge">Est. 35 min</span>
+      </div>
+      <h1>Prerequisites &amp; Environment Setup</h1>
+      <p><strong>Learning Objective:</strong> Verify your local Flutter, Android, PHP, MySQL, Composer, and Postman toolchain before writing code.</p>
+      <h2>1. Verify Flutter &amp; Android Toolchain</h2>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>flutter --version
+flutter doctor -v</code></pre></div>
+      <div class="callout ok"><strong>Expected Output:</strong> Green checkmarks for Flutter, Android toolchain, and Android Studio / VS Code. Ensure an Android Emulator or USB-debugged Android phone is connected (<code>flutter devices</code>).</div>
+      <h2>2. Verify PHP, Composer &amp; MySQL</h2>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>php -v
+composer --version
+mysql --version</code></pre></div>
+      <div class="callout warn">
+        <strong>Common Errors:</strong>
+        <ul>
+          <li><code>flutter doctor</code> shows Android licenses not accepted &rarr; run <code>flutter doctor --android-licenses</code>.</li>
+          <li><code>mysql</code> not recognized on Windows &rarr; use XAMPP at <code>C:\xampp\mysql\bin\mysql.exe</code> and start MySQL in XAMPP Control Panel.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHAPTER 3 -->
+  <section class="chapter" data-title="3. Requirement Analysis" data-time="30 min">
+    <div class="card">
+      <div class="meta-row">
+        <span class="badge">Chapter 3</span>
+        <span class="badge">Est. 30 min</span>
+      </div>
+      <h1>Requirement Analysis (Before Coding)</h1>
+      <p><strong>Learning Objective:</strong> Translate campus needs into clear Functional Requirements, Non-Functional Requirements, and MVP scope.</p>
+      <div class="callout"><strong>Why before coding?</strong> Writing code without requirements causes rework, missing database constraints, and insecure shortcuts. See full details in <code>docs/requirements.md</code>.</div>
+      <h2>User Roles &amp; Core Stories</h2>
+      <ul>
+        <li><strong>Student:</strong> "As a student, I want to register for an event once and scan an organizer's QR code so my attendance is recorded."</li>
+        <li><strong>Organizer:</strong> "As an organizer, I want to generate a 15-minute expiring QR code so students cannot share static screenshots."</li>
+        <li><strong>Admin:</strong> "As an admin, I want to view campus-wide event and attendance statistics."</li>
+      </ul>
+      <h2>Non-Functional Security Rules</h2>
+      <ul>
+        <li>Hash passwords with <code>password_hash(..., PASSWORD_BCRYPT)</code>.</li>
+        <li>Use PDO prepared statements everywhere to prevent SQL injection.</li>
+        <li>Prevent duplicate registrations and duplicate attendance at both the API and MySQL <code>UNIQUE</code> constraint levels.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- CHAPTER 4 -->
+  <section class="chapter" data-title="4. System Design" data-time="40 min">
+    <div class="card">
+      <div class="meta-row">
+        <span class="badge">Chapter 4</span>
+        <span class="badge">Est. 40 min</span>
+      </div>
+      <h1>System Architecture, Database &amp; API Design</h1>
+      <p><strong>Learning Objective:</strong> Understand how Flutter (MVVM + Repository), PHP (Router + Middleware + Controllers + Repositories), MySQL, and FCM fit together.</p>
+      <h2>High-Level Architecture</h2>
+      <div class="mermaid">
+flowchart LR
+    UI["Flutter UI (Views)"] --> VM["ViewModels (Provider)"] --> REPO["Repositories"] --> API["PHP 8 REST API"]
+    API --> DB[("MySQL Database")]
+    API --> FCM["FCM HTTP v1"]
+    FCM --> UI
+      </div>
+      <h2>Entity-Relationship Overview</h2>
+      <p>Key tables in <code>campus_event_api/database/database.sql</code>:</p>
+      <ul>
+        <li><code>users</code> &rarr; <code>events</code> (<code>organizer_id</code>)</li>
+        <li><code>event_categories</code> &rarr; <code>events</code> (<code>category_id</code>)</li>
+        <li><code>events</code> + <code>users</code> &rarr; <code>event_registrations</code> (<code>UNIQUE (event_id, user_id)</code>)</li>
+        <li><code>event_registrations</code> &rarr; <code>attendance</code> (<code>UNIQUE (registration_id)</code>)</li>
+        <li><code>events</code> &rarr; <code>attendance_qr_tokens</code> (SHA-256 hashed, time-limited)</li>
+        <li><code>users</code> &rarr; <code>user_sessions</code> &amp; <code>device_tokens</code></li>
+      </ul>
+      <h2>Consistent JSON Response Envelope</h2>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>{
+  "success": true,
+  "message": "Operation completed",
+  "data": {}
+}</code></pre></div>
+    </div>
+  </section>
+
+  <!-- CHAPTER 5 -->
+  <section class="chapter" data-title="5. Agile Planning" data-time="20 min">
+    <div class="card">
+      <div class="meta-row">
+        <span class="badge">Chapter 5</span>
+        <span class="badge">Est. 20 min</span>
+      </div>
+      <h1>Agile Sprints &amp; Definition of Done</h1>
+      <p><strong>Learning Objective:</strong> Build incrementally across Sprints 0–7 instead of writing everything at once.</p>
+      <table>
+        <tr><th>Sprint</th><th>Focus</th><th>Deliverable</th></tr>
+        <tr><td>Sprint 0</td><td>Planning &amp; Design</td><td>SRS, Architecture, ER Diagram, API Spec</td></tr>
+        <tr><td>Sprint 1</td><td>Flutter UI Foundation</td><td>Theme, Router, Login/Register, Dashboards</td></tr>
+        <tr><td>Sprint 2</td><td>PHP Backend &amp; MySQL</td><td><code>database.sql</code>, PDO, Auth APIs</td></tr>
+        <tr><td>Sprint 3</td><td>Event Management</td><td>Event CRUD end-to-end</td></tr>
+        <tr><td>Sprint 4</td><td>Event Registration</td><td>Register/Cancel + My Events</td></tr>
+        <tr><td>Sprint 5</td><td>QR Attendance</td><td>QR Generate, Scan, Verify, Reports</td></tr>
+        <tr><td>Sprint 6</td><td>Push Notifications</td><td>FCM device tokens + HTTP v1</td></tr>
+        <tr><td>Sprint 7</td><td>Testing &amp; Deployment</td><td><code>flutter test</code>, Postman, APK/AAB</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- CHAPTER 6 -->
+  <section class="chapter" data-title="6. Create Flutter Project" data-time="35 min">
+    <div class="card">
+      <div class="meta-row">
+        <span class="badge">Chapter 6</span>
+        <span class="badge">Est. 35 min</span>
+      </div>
+      <h1>Sprint 1: Create &amp; Structure the Flutter Project</h1>
+      <p><strong>Learning Objective:</strong> Initialize <code>campus_event_app</code>, install packages, and configure Material 3 theming.</p>
+      <h2>Implementation</h2>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>flutter create --org edu.campus --project-name campus_event_app campus_event_app
+cd campus_event_app
+flutter pub add provider go_router http flutter_secure_storage shared_preferences qr_flutter mobile_scanner firebase_core firebase_messaging intl</code></pre></div>
+      <p>Organize <code>lib/</code> into <code>core/</code> (theme, network, routing, widgets) and <code>features/</code> (<code>auth</code>, <code>events</code>, <code>registrations</code>, <code>attendance</code>, <code>notifications</code>, <code>profile</code>, <code>dashboard</code>).</p>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>// lib/main.dart
+import 'package:flutter/material.dart';
+import 'app.dart';
+
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const CampusEventApp());
+}</code></pre></div>
+      <div class="callout"><strong>Git Checkpoint:</strong> <code>git add . &amp;&amp; git commit -m "chore: initialize flutter project and core theme"</code></div>
+    </div>
+  </section>
+
+  <!-- CHAPTER 7 -->
+  <section class="chapter" data-title="7. Build Application UI" data-time="60 min">
+    <div class="card">
+      <div class="meta-row">
+        <span class="badge">Chapter 7</span>
+        <span class="badge">Est. 60 min</span>
+      </div>
+      <h1>Build the Material 3 Application UI</h1>
+      <p><strong>Learning Objective:</strong> Create clean, reusable UI screens without mixing HTTP calls into widgets.</p>
+      <h2>Key Reusable Widgets</h2>
+      <ul>
+        <li><code>lib/core/widgets/state_views.dart</code>: <code>LoadingStateView</code>, <code>EmptyStateView</code>, <code>ErrorStateView</code>.</li>
+        <li><code>lib/core/widgets/event_card.dart</code>: Displays category badge, seat count, title, date, and venue.</li>
+      </ul>
+      <h2>Role-Based Navigation Shell</h2>
+      <p>In <code>lib/features/dashboard/views/home_shell.dart</code>, the bottom <code>NavigationBar</code> adapts to the logged-in user's role:</p>
+      <ul>
+        <li><strong>Student:</strong> Home, Explore, My Events, Profile</li>
+        <li><strong>Organizer:</strong> Dashboard, Manage, Explore, Profile</li>
+        <li><strong>Admin:</strong> Admin, Events, Profile</li>
+      </ul>
+      <div class="callout"><strong>AI Coding Prompt:</strong> "Inspect <code>campus_event_app/lib/core/widgets/event_card.dart</code> and create a reusable Material 3 card widget for registration items without embedding HTTP calls."</div>
+    </div>
+  </section>
+
+  <!-- CHAPTER 8 -->
+  <section class="chapter" data-title="8. Build PHP Backend" data-time="60 min">
+    <div class="card">
+      <div class="meta-row">
+        <span class="badge">Chapter 8</span>
+        <span class="badge">Est. 60 min</span>
+      </div>
+      <h1>Sprint 2: Build the PHP 8 REST API &amp; MySQL Database</h1>
+      <p><strong>Learning Objective:</strong> Import <code>database.sql</code>, configure PDO, and run the lightweight PHP router.</p>
+      <h2>1. Import Schema &amp; Start Server</h2>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>cd campus_event_api
+composer install
+cp .env.example .env
+mysql -u root -p &lt; database/database.sql
+php -S 0.0.0.0:8000 -t public</code></pre></div>
+      <h2>2. Security Highlights in <code>AuthController.php</code></h2>
+      <ul>
+        <li>Public <code>/api/auth/register</code> always forces <code>role = 'student'</code>.</li>
+        <li>Passwords are hashed with <code>password_hash($password, PASSWORD_BCRYPT)</code>.</li>
+        <li>Opaque 64-char hex bearer tokens are hashed with <code>hash('sha256', $token)</code> before storing in <code>user_sessions</code>.</li>
+      </ul>
+      <div class="callout ok"><strong>Expected Output:</strong> Visiting <code>http://localhost:8000/api/health</code> returns <code>{"success":true,"message":"Campus Event API is running",...}</code>.</div>
+    </div>
+  </section>
+
+  <!-- CHAPTER 9 -->
+  <section class="chapter" data-title="9. Integrate Flutter & PHP" data-time="55 min">
+    <div class="card">
+      <div class="meta-row">
+        <span class="badge">Chapter 9</span>
+        <span class="badge">Est. 55 min</span>
+      </div>
+      <h1>Sprints 3 &amp; 4: Integrate Flutter with PHP</h1>
+      <p><strong>Learning Objective:</strong> Trace how data flows from a button tap &rarr; ViewModel &rarr; Repository &rarr; <code>ApiClient</code> &rarr; PHP &rarr; MySQL and back.</p>
+      <h2>Networking &amp; Token Storage</h2>
+      <ul>
+        <li><code>lib/core/constants/api_constants.dart</code> uses <code>http://10.0.2.2:8000</code> for the Android Emulator and supports <code>--dart-define=API_BASE_URL=...</code> for physical devices.</li>
+        <li><code>lib/core/network/api_client.dart</code> automatically reads the bearer token from <code>FlutterSecureStorage</code> and attaches <code>Authorization: Bearer &lt;token&gt;</code>.</li>
+      </ul>
+      <h2>Data Flow Example: Event Registration</h2>
+      <ol>
+        <li>Student taps <strong>Register Now</strong> in <code>EventDetailScreen</code>.</li>
+        <li><code>RegistrationViewModel.registerForEvent()</code> sets <code>isSubmitting = true</code>.</li>
+        <li><code>RegistrationRepository</code> calls <code>POST /api/events/{id}/register</code>.</li>
+        <li>PHP checks event status, capacity, and duplicate registration, then inserts into <code>event_registrations</code>.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- CHAPTER 10 -->
+  <section class="chapter" data-title="10. QR Attendance" data-time="50 min">
+    <div class="card">
+      <div class="meta-row">
+        <span class="badge">Chapter 10</span>
+        <span class="badge">Est. 50 min</span>
+      </div>
+      <h1>Sprint 5: Secure QR Code Attendance</h1>
+      <p><strong>Learning Objective:</strong> Implement time-limited QR generation and server-side attendance verification.</p>
+      <div class="callout warn"><strong>Why not static QR codes?</strong> A static QR code containing only <code>event_id=1</code> can be photographed and shared with absent students. Our PHP backend generates a random <code>CAMPUS_QR_...</code> token, stores its SHA-256 hash in <code>attendance_qr_tokens</code> with a 15-minute expiry, and verifies registration + duplicate attendance on the server.</div>
+      <h2>Key Files</h2>
+      <ul>
+        <li><code>campus_event_api/app/Controllers/AttendanceController.php</code> (<code>generateQr</code>, <code>verify</code>, <code>eventReport</code>)</li>
+        <li><code>campus_event_app/lib/features/attendance/views/qr_generate_screen.dart</code> (<code>qr_flutter</code>)</li>
+        <li><code>campus_event_app/lib/features/attendance/views/qr_scan_screen.dart</code> (<code>mobile_scanner</code> + manual emulator paste box)</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- CHAPTER 11 -->
+  <section class="chapter" data-title="11. Push Notifications" data-time="45 min">
+    <div class="card">
+      <div class="meta-row">
+        <span class="badge">Chapter 11</span>
+        <span class="badge">Est. 45 min</span>
+      </div>
+      <h1>Sprint 6: Firebase Cloud Messaging (FCM)</h1>
+      <p><strong>Learning Objective:</strong> Register Android device tokens with PHP and send event notifications via FCM HTTP v1.</p>
+      <h2>Setup Steps</h2>
+      <ol>
+        <li>Create a Firebase project and register Android app ID <code>edu.campus.campus_event_app</code>.</li>
+        <li>Download <code>google-services.json</code> into <code>campus_event_app/android/app/</code>.</li>
+        <li>Generate a Firebase Service Account JSON and place it in <code>campus_event_api/storage/firebase-service-account.json</code> (never inside <code>public/</code> or Flutter!).</li>
+        <li>Update <code>FCM_PROJECT_ID</code> and <code>FCM_SERVICE_ACCOUNT_PATH</code> in <code>campus_event_api/.env</code>.</li>
+      </ol>
+      <details>
+        <summary>Optional Alternatives: Firebase Auth &amp; Cloud Firestore</summary>
+        <p>In a serverless-only architecture, Firebase Auth could replace PHP sessions and Firestore could replace MySQL. We keep PHP + MySQL as our primary stack so you master relational schemas, SQL constraints, and REST API security.</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- CHAPTER 12 -->
+  <section class="chapter" data-title="12. Testing & Debugging" data-time="40 min">
+    <div class="card">
+      <div class="meta-row">
+        <span class="badge">Chapter 12</span>
+        <span class="badge">Est. 40 min</span>
+      </div>
+      <h1>Sprint 7: Testing &amp; Debugging</h1>
+      <p><strong>Learning Objective:</strong> Run Flutter static analysis, unit/widget tests, and Postman API verification.</p>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>cd campus_event_app
+flutter analyze
+flutter test</code></pre></div>
+      <p>Import <code>postman/campus_event_api.postman_collection.json</code> to verify 200/201 happy paths and 401/403/409/422 error paths. Full checklist: <code>docs/testing_guide.md</code>.</p>
+    </div>
+  </section>
+
+  <!-- CHAPTER 13 -->
+  <section class="chapter" data-title="13. Deployment" data-time="45 min">
+    <div class="card">
+      <div class="meta-row">
+        <span class="badge">Chapter 13</span>
+        <span class="badge">Est. 45 min</span>
+      </div>
+      <h1>Deployment: Local &amp; Production</h1>
+      <p><strong>Learning Objective:</strong> Deploy PHP + MySQL over HTTPS and build signed Android APK and AAB release artifacts.</p>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>cd campus_event_app
+flutter build apk --release --dart-define=API_BASE_URL=https://api.yourdomain.edu
+flutter build appbundle --release --dart-define=API_BASE_URL=https://api.yourdomain.edu</code></pre></div>
+      <p>See <code>docs/deployment_guide.md</code> for Apache/Nginx document root security, Let's Encrypt HTTPS, and Android release signing.</p>
+    </div>
+  </section>
+
+  <!-- CHAPTER 14 -->
+  <section class="chapter" data-title="14. Final Review" data-time="20 min">
+    <div class="card">
+      <div class="meta-row">
+        <span class="badge">Chapter 14</span>
+        <span class="badge">Est. 20 min</span>
+      </div>
+      <h1>Final Review &amp; Next Extensions</h1>
+      <p><strong>Congratulations!</strong> You have designed, built, tested, and prepared a production-structured Campus Event &amp; Attendance Management System.</p>
+      <h2>Completion Checklist</h2>
+      <div class="checklist">
+        <label><input type="checkbox" /> MySQL schema imported &amp; PHP API running</label>
+        <label><input type="checkbox" /> Flutter app runs and authenticates seeded accounts</label>
+        <label><input type="checkbox" /> Duplicate registrations &amp; duplicate attendance blocked by backend</label>
+        <label><input type="checkbox" /> <code>flutter analyze</code> and <code>flutter test</code> pass</label>
+      </div>
+      <h2>Suggested Extensions</h2>
+      <ul>
+        <li>Build a dedicated React/Next.js or Flutter Web Admin Portal using the same <code>/api/admin/*</code> endpoints.</li>
+        <li>Add CSV/PDF export for organizer attendance reports.</li>
+        <li>Implement automated event reminder cron jobs 1 hour before <code>start_time</code>.</li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer-nav">
+  <button class="btn" id="prevBtn">&larr; Previous</button>
+  <span id="stepLabel" style="font-size:0.9rem;color:var(--muted);">Chapter 1 / 14</span>
+  <button class="btn primary" id="nextBtn">Next &rarr;</button>
+</footer>
+
+<script>
+(function () {
+  const chapters = Array.from(document.querySelectorAll('.chapter'));
+  const sidebar = document.getElementById('sidebar');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const progressText = document.getElementById('progressText');
+  const progressFill = document.getElementById('progressFill');
+  const stepLabel = document.getElementById('stepLabel');
+  const menuBtn = document.getElementById('menuBtn');
+  let current = 0;
+
+  chapters.forEach((ch, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'nav-item' + (idx === 0 ? ' active' : '');
+    btn.innerHTML = `<span class="step-num">${idx + 1}</span><span>${ch.dataset.title}</span>`;
+    btn.addEventListener('click', () => goTo(idx));
+    sidebar.appendChild(btn);
+  });
+
+  function goTo(index) {
+    if (index < 0 || index >= chapters.length) return;
+    chapters[current].classList.remove('active');
+    sidebar.children[current].classList.remove('active');
+    if (index > current) sidebar.children[current].classList.add('done');
+    current = index;
+    chapters[current].classList.add('active');
+    sidebar.children[current].classList.add('active');
+    sidebar.classList.remove('open');
+
+    const pct = Math.round(((current + 1) / chapters.length) * 100);
+    progressText.textContent = `Step ${current + 1} of ${chapters.length}`;
+    progressFill.style.width = `${pct}%`;
+    stepLabel.textContent = `Chapter ${current + 1} / ${chapters.length} (${chapters[current].dataset.time})`;
+    prevBtn.disabled = current === 0;
+    nextBtn.disabled = current === chapters.length - 1;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  prevBtn.addEventListener('click', () => goTo(current - 1));
+  nextBtn.addEventListener('click', () => goTo(current + 1));
+  menuBtn.addEventListener('click', () => sidebar.classList.toggle('open'));
+
+  document.querySelectorAll('.copy-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const code = btn.nextElementSibling.innerText;
+      try {
+        await navigator.clipboard.writeText(code);
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+      } catch (_) {}
+    });
+  });
+
+  window.addEventListener('DOMContentLoaded', () => {
+    if (window.mermaid) {
+      window.mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    }
+  });
+})();
+</script>
+</body>
+</html>

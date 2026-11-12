@@ -1,0 +1,161 @@
+{
+  "info": {
+    "_postman_id": "a7b8c9d0-1234-4567-89ab-cdef01234567",
+    "name": "Campus Event & Attendance API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/health"
+      }
+    },
+    {
+      "name": "Auth - Register Student",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"full_name\": \"New Student\",\n  \"email\": \"newstudent@campus.edu\",\n  \"password\": \"Password123!\",\n  \"student_id_number\": \"24CE099\",\n  \"department\": \"Computer Engineering\"\n}"
+        },
+        "url": "{{base_url}}/api/auth/register"
+      }
+    },
+    {
+      "name": "Auth - Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.success && json.data && json.data.token) {",
+              "  pm.environment.set('auth_token', json.data.token);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"student@campus.edu\",\n  \"password\": \"Password123!\"\n}"
+        },
+        "url": "{{base_url}}/api/auth/login"
+      }
+    },
+    {
+      "name": "Auth - Logout",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/auth/logout"
+      }
+    },
+    {
+      "name": "Events - List Published",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/events"
+      }
+    },
+    {
+      "name": "Events - Details",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/events/1"
+      }
+    },
+    {
+      "name": "Events - Create (Organizer/Admin)",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Dart & Flutter UI Lab\",\n  \"description\": \"Hands-on Material 3 workshop\",\n  \"category_id\": 5,\n  \"venue\": \"Lab 204\",\n  \"start_time\": \"2026-12-15 10:00:00\",\n  \"end_time\": \"2026-12-15 13:00:00\",\n  \"max_capacity\": 60\n}"
+        },
+        "url": "{{base_url}}/api/events"
+      }
+    },
+    {
+      "name": "Registrations - Register for Event",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/events/1/register"
+      }
+    },
+    {
+      "name": "Registrations - My Registrations",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/my-registrations"
+      }
+    },
+    {
+      "name": "Attendance - Generate QR (Organizer)",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"ttl_minutes\": 15\n}"
+        },
+        "url": "{{base_url}}/api/events/1/attendance/qr"
+      }
+    },
+    {
+      "name": "Attendance - Verify QR (Student)",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"qr_token\": \"{{qr_token}}\"\n}"
+        },
+        "url": "{{base_url}}/api/attendance/verify"
+      }
+    },
+    {
+      "name": "Attendance - Event Report (Organizer)",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/events/1/attendance"
+      }
+    },
+    {
+      "name": "Notifications - Save Device Token",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fcm_token\": \"sample-fcm-device-token\",\n  \"platform\": \"android\"\n}"
+        },
+        "url": "{{base_url}}/api/notifications/device-token"
+      }
+    },
+    {
+      "name": "Profile - Get Profile",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/profile"
+      }
+    }
+  ]
+}
