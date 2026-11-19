@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 import '../../../core/widgets/event_card.dart';
 import '../../../core/widgets/state_views.dart';
 import '../viewmodels/event_viewmodel.dart';
 
-class EventListScreen extends StatefulWidget {
+class EventListScreen extends ConsumerStatefulWidget {
   const EventListScreen({super.key, this.mineOnly = false});
 
   final bool mineOnly;
 
   @override
-  State<EventListScreen> createState() => _EventListScreenState();
+  ConsumerState<EventListScreen> createState() => _EventListScreenState();
 }
 
-class _EventListScreenState extends State<EventListScreen> {
+class _EventListScreenState extends ConsumerState<EventListScreen> {
   final _searchController = TextEditingController();
 
   @override
@@ -23,9 +23,9 @@ class _EventListScreenState extends State<EventListScreen> {
     super.initState();
     Future.microtask(() {
       if (!mounted) return;
-      final vm = context.read<EventViewModel>();
-      vm.loadCategories();
-      vm.loadEvents(mine: widget.mineOnly);
+      final notifier = ref.read(eventViewModelProvider.notifier);
+      notifier.loadCategories();
+      notifier.loadEvents(mine: widget.mineOnly);
     });
   }
 
@@ -37,7 +37,8 @@ class _EventListScreenState extends State<EventListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<EventViewModel>();
+    final state = ref.watch(eventViewModelProvider);
+    final notifier = ref.read(eventViewModelProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(
@@ -64,16 +65,16 @@ class _EventListScreenState extends State<EventListScreen> {
                         icon: const Icon(Icons.clear),
                         onPressed: () {
                           _searchController.clear();
-                          vm.setSearchQuery('', mine: widget.mineOnly);
+                          notifier.setSearchQuery('', mine: widget.mineOnly);
                         },
                       )
                     : null,
               ),
               onSubmitted: (value) =>
-                  vm.setSearchQuery(value, mine: widget.mineOnly),
+                  notifier.setSearchQuery(value, mine: widget.mineOnly),
             ),
           ),
-          if (vm.categories.isNotEmpty)
+          if (state.categories.isNotEmpty)
             SizedBox(
               height: 44,
               child: ListView(
@@ -84,19 +85,21 @@ class _EventListScreenState extends State<EventListScreen> {
                     padding: const EdgeInsets.only(right: 8),
                     child: FilterChip(
                       label: const Text('All'),
-                      selected: vm.selectedCategoryId == null,
+                      selected: state.selectedCategoryId == null,
                       onSelected: (_) =>
-                          vm.setCategoryFilter(null, mine: widget.mineOnly),
+                          notifier.setCategoryFilter(null, mine: widget.mineOnly),
                     ),
                   ),
-                  ...vm.categories.map(
+                  ...state.categories.map(
                     (cat) => Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: FilterChip(
                         label: Text(cat.name),
-                        selected: vm.selectedCategoryId == cat.id,
-                        onSelected: (_) => vm.setCategoryFilter(cat.id,
-                            mine: widget.mineOnly),
+                        selected: state.selectedCategoryId == cat.id,
+                        onSelected: (_) => notifier.setCategoryFilter(
+                          cat.id,
+                          mine: widget.mineOnly,
+                        ),
                       ),
                     ),
                   ),
@@ -107,16 +110,16 @@ class _EventListScreenState extends State<EventListScreen> {
           Expanded(
             child: Builder(
               builder: (context) {
-                if (vm.isLoading) {
+                if (state.isLoading) {
                   return const LoadingStateView(message: 'Loading events...');
                 }
-                if (vm.errorMessage != null) {
+                if (state.errorMessage != null) {
                   return ErrorStateView(
-                    message: vm.errorMessage!,
-                    onRetry: () => vm.loadEvents(mine: widget.mineOnly),
+                    message: state.errorMessage!,
+                    onRetry: () => notifier.loadEvents(mine: widget.mineOnly),
                   );
                 }
-                if (vm.events.isEmpty) {
+                if (state.events.isEmpty) {
                   return const EmptyStateView(
                     icon: Icons.event_note_outlined,
                     title: 'No Events Found',
@@ -124,13 +127,13 @@ class _EventListScreenState extends State<EventListScreen> {
                   );
                 }
                 return RefreshIndicator(
-                  onRefresh: () => vm.loadEvents(mine: widget.mineOnly),
+                  onRefresh: () => notifier.loadEvents(mine: widget.mineOnly),
                   child: ListView.separated(
                     padding: const EdgeInsets.all(16),
-                    itemCount: vm.events.length,
+                    itemCount: state.events.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
-                      final event = vm.events[index];
+                      final event = state.events[index];
                       return EventCard(
                         event: event,
                         onTap: () => context.push('/events/${event.id}'),

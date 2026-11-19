@@ -1,14 +1,16 @@
-import 'package:campus_event_app/core/network/api_client.dart';
 import 'package:campus_event_app/core/widgets/event_card.dart';
 import 'package:campus_event_app/features/auth/models/user_model.dart';
-import 'package:campus_event_app/features/auth/repositories/auth_repository.dart';
-import 'package:campus_event_app/features/auth/services/auth_service.dart';
 import 'package:campus_event_app/features/auth/viewmodels/auth_viewmodel.dart';
 import 'package:campus_event_app/features/auth/views/login_screen.dart';
 import 'package:campus_event_app/features/events/models/event_model.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
+
+class _FakeAuthViewModel extends AuthViewModel {
+  @override
+  AuthState build() => const AuthState(isInitialized: true);
+}
 
 void main() {
   group('Domain Models', () {
@@ -90,12 +92,11 @@ void main() {
 
     testWidgets('LoginScreen validates empty email and password',
         (tester) async {
-      final api = ApiClient();
-      final authVm = AuthViewModel(AuthRepository(api, AuthService(api)));
-
       await tester.pumpWidget(
-        ChangeNotifierProvider<AuthViewModel>.value(
-          value: authVm,
+        ProviderScope(
+          overrides: [
+            authViewModelProvider.overrideWith(_FakeAuthViewModel.new),
+          ],
           child: const MaterialApp(home: LoginScreen()),
         ),
       );

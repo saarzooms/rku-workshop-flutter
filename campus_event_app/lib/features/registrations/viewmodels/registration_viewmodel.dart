@@ -1,44 +1,75 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/api_exception.dart';
+import '../../../core/providers/core_providers.dart';
 import '../models/registration_model.dart';
 import '../repositories/registration_repository.dart';
+import '../services/registration_service.dart';
 
-class RegistrationViewModel extends ChangeNotifier {
-  RegistrationViewModel(this._repository);
+class RegistrationState {
+  const RegistrationState({
+    this.registrations = const [],
+    this.isLoading = false,
+    this.isSubmitting = false,
+    this.errorMessage,
+  });
 
-  final RegistrationRepository _repository;
+  final List<RegistrationModel> registrations;
+  final bool isLoading;
+  final bool isSubmitting;
+  final String? errorMessage;
 
-  List<RegistrationModel> _registrations = [];
-  bool _isLoading = false;
-  bool _isSubmitting = false;
-  String? _errorMessage;
+  RegistrationState copyWith({
+    List<RegistrationModel>? registrations,
+    bool? isLoading,
+    bool? isSubmitting,
+    String? errorMessage,
+    bool clearError = false,
+  }) {
+    return RegistrationState(
+      registrations: registrations ?? this.registrations,
+      isLoading: isLoading ?? this.isLoading,
+      isSubmitting: isSubmitting ?? this.isSubmitting,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+    );
+  }
+}
 
-  List<RegistrationModel> get registrations => _registrations;
-  bool get isLoading => _isLoading;
-  bool get isSubmitting => _isSubmitting;
-  String? get errorMessage => _errorMessage;
+final registrationRepositoryProvider = Provider<RegistrationRepository>((ref) {
+  return RegistrationRepository(
+    RegistrationService(ref.watch(apiClientProvider)),
+  );
+});
+
+final registrationViewModelProvider =
+    NotifierProvider<RegistrationViewModel, RegistrationState>(
+  RegistrationViewModel.new,
+);
+
+class RegistrationViewModel extends Notifier<RegistrationState> {
+  @override
+  RegistrationState build() => const RegistrationState();
+
+  RegistrationRepository get _repository =>
+      ref.read(registrationRepositoryProvider);
 
   Future<void> loadMyRegistrations() async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
+    state = state.copyWith(isLoading: true, clearError: true);
     try {
-      _registrations = await _repository.getMyRegistrations();
+      final list = await _repository.getMyRegistrations();
+      state = state.copyWith(registrations: list, isLoading: false);
     } on ApiException catch (e) {
-      _errorMessage = e.message;
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
     } catch (_) {
-      _errorMessage = 'Failed to load your registrations.';
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Failed to load your registrations.',
+      );
     }
   }
 
   Future<String?> registerForEvent(int eventId) async {
-    _isSubmitting = true;
-    notifyListeners();
+    state = state.copyWith(isSubmitting: true);
     try {
       await _repository.register(eventId);
       await loadMyRegistrations();
@@ -48,14 +79,12 @@ class RegistrationViewModel extends ChangeNotifier {
     } catch (_) {
       return 'Registration failed. Please try again.';
     } finally {
-      _isSubmitting = false;
-      notifyListeners();
+      state = state.copyWith(isSubmitting: false);
     }
   }
 
   Future<String?> cancelRegistration(int eventId) async {
-    _isSubmitting = true;
-    notifyListeners();
+    state = state.copyWith(isSubmitting: true);
     try {
       await _repository.cancel(eventId);
       await loadMyRegistrations();
@@ -65,8 +94,7 @@ class RegistrationViewModel extends ChangeNotifier {
     } catch (_) {
       return 'Could not cancel registration.';
     } finally {
-      _isSubmitting = false;
-      notifyListeners();
+      state = state.copyWith(isSubmitting: false);
     }
   }
 }

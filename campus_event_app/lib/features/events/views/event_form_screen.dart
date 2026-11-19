@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 
 import '../models/event_model.dart';
 import '../viewmodels/event_viewmodel.dart';
 
-class EventFormScreen extends StatefulWidget {
+class EventFormScreen extends ConsumerStatefulWidget {
   const EventFormScreen({super.key, this.existingEvent});
 
   final EventModel? existingEvent;
 
   @override
-  State<EventFormScreen> createState() => _EventFormScreenState();
+  ConsumerState<EventFormScreen> createState() => _EventFormScreenState();
 }
 
-class _EventFormScreenState extends State<EventFormScreen> {
+class _EventFormScreenState extends ConsumerState<EventFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleController;
   late final TextEditingController _descController;
@@ -50,9 +50,8 @@ class _EventFormScreenState extends State<EventFormScreen> {
 
     Future.microtask(() {
       if (!mounted) return;
-      final vm = context.read<EventViewModel>();
-      if (vm.categories.isEmpty) {
-        vm.loadCategories();
+      if (ref.read(eventViewModelProvider).categories.isEmpty) {
+        ref.read(eventViewModelProvider.notifier).loadCategories();
       }
     });
   }
@@ -70,11 +69,11 @@ class _EventFormScreenState extends State<EventFormScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    final vm = context.read<EventViewModel>();
-    final catId =
-        _categoryId ?? (vm.categories.isNotEmpty ? vm.categories.first.id : 1);
+    final state = ref.read(eventViewModelProvider);
+    final catId = _categoryId ??
+        (state.categories.isNotEmpty ? state.categories.first.id : 1);
 
-    final ok = await vm.saveEvent(
+    final ok = await ref.read(eventViewModelProvider.notifier).saveEvent(
       eventId: widget.existingEvent?.id,
       payload: {
         'title': _titleController.text.trim(),
@@ -93,19 +92,22 @@ class _EventFormScreenState extends State<EventFormScreen> {
         const SnackBar(content: Text('Event saved successfully')),
       );
       context.pop();
-    } else if (vm.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(vm.errorMessage!),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
+    } else {
+      final err = ref.read(eventViewModelProvider).errorMessage;
+      if (err != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(err),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<EventViewModel>();
+    final state = ref.watch(eventViewModelProvider);
     final isEditing = widget.existingEvent != null;
 
     return Scaffold(
@@ -124,11 +126,11 @@ class _EventFormScreenState extends State<EventFormScreen> {
                     (v == null || v.trim().isEmpty) ? 'Title required' : null,
               ),
               const SizedBox(height: 14),
-              if (vm.categories.isNotEmpty)
+              if (state.categories.isNotEmpty)
                 DropdownButtonFormField<int>(
-                  initialValue: _categoryId ?? vm.categories.first.id,
+                  initialValue: _categoryId ?? state.categories.first.id,
                   decoration: const InputDecoration(labelText: 'Category'),
-                  items: vm.categories
+                  items: state.categories
                       .map((c) =>
                           DropdownMenuItem(value: c.id, child: Text(c.name)))
                       .toList(),
@@ -181,7 +183,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
               ),
               const SizedBox(height: 24),
               FilledButton(
-                onPressed: vm.isSubmitting ? null : _submit,
+                onPressed: state.isSubmitting ? null : _submit,
                 child: Text(isEditing ? 'Update Event' : 'Publish Event'),
               ),
             ],

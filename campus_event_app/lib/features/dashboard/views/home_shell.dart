@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
+import '../../../core/providers/core_providers.dart';
 import '../../auth/viewmodels/auth_viewmodel.dart';
 import '../../events/views/event_list_screen.dart';
-import '../../notifications/services/fcm_service.dart';
 import '../../profile/views/profile_screen.dart';
 import '../../registrations/views/my_registrations_screen.dart';
 import 'admin_dashboard_tab.dart';
 import 'organizer_dashboard_tab.dart';
 import 'student_home_tab.dart';
 
-class HomeShell extends StatefulWidget {
+class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
 
   @override
-  State<HomeShell> createState() => _HomeShellState();
+  ConsumerState<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends State<HomeShell> {
+class _HomeShellState extends ConsumerState<HomeShell> {
   int _selectedIndex = 0;
 
   @override
@@ -26,7 +26,7 @@ class _HomeShellState extends State<HomeShell> {
     super.initState();
     Future.microtask(() {
       if (!mounted) return;
-      context.read<FcmNotificationService>().initialize(
+      ref.read(fcmServiceProvider).initialize(
         onForegroundMessage: (title, body) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
@@ -44,7 +44,7 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<AuthViewModel>().currentUser;
+    final user = ref.watch(authViewModelProvider).currentUser;
     if (user == null) {
       return const SizedBox.shrink();
     }

@@ -1,46 +1,51 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/widgets/state_views.dart';
 import '../viewmodels/attendance_viewmodel.dart';
 
-class AttendanceReportScreen extends StatefulWidget {
+class AttendanceReportScreen extends ConsumerStatefulWidget {
   const AttendanceReportScreen({super.key, required this.eventId});
 
   final int eventId;
 
   @override
-  State<AttendanceReportScreen> createState() => _AttendanceReportScreenState();
+  ConsumerState<AttendanceReportScreen> createState() =>
+      _AttendanceReportScreenState();
 }
 
-class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
+class _AttendanceReportScreenState
+    extends ConsumerState<AttendanceReportScreen> {
   @override
   void initState() {
     super.initState();
     Future.microtask(() => mounted
-        ? context.read<AttendanceViewModel>().loadEventReport(widget.eventId)
+        ? ref
+            .read(attendanceViewModelProvider.notifier)
+            .loadEventReport(widget.eventId)
         : null);
   }
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<AttendanceViewModel>();
+    final state = ref.watch(attendanceViewModelProvider);
+    final notifier = ref.read(attendanceViewModelProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Attendance Report')),
       body: Builder(
         builder: (context) {
-          if (vm.isLoading) {
+          if (state.isLoading) {
             return const LoadingStateView(message: 'Loading report...');
           }
-          if (vm.errorMessage != null) {
+          if (state.errorMessage != null) {
             return ErrorStateView(
-              message: vm.errorMessage!,
-              onRetry: () => vm.loadEventReport(widget.eventId),
+              message: state.errorMessage!,
+              onRetry: () => notifier.loadEventReport(widget.eventId),
             );
           }
 
-          final summary = vm.summary;
+          final summary = state.summary;
           if (summary == null) {
             return const EmptyStateView(
               icon: Icons.analytics_outlined,
@@ -50,7 +55,7 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
           }
 
           return RefreshIndicator(
-            onRefresh: () => vm.loadEventReport(widget.eventId),
+            onRefresh: () => notifier.loadEventReport(widget.eventId),
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -95,13 +100,13 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
                       ?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 8),
-                if (vm.attendees.isEmpty)
+                if (state.attendees.isEmpty)
                   const Padding(
                     padding: EdgeInsets.all(24),
                     child: Center(child: Text('No students registered yet.')),
                   )
                 else
-                  ...vm.attendees.map(
+                  ...state.attendees.map(
                     (item) => Card(
                       margin: const EdgeInsets.only(bottom: 8),
                       child: ListTile(
@@ -117,8 +122,7 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
                           ),
                         ),
                         title: Text(item.fullName),
-                        subtitle: Text(
-                            item.studentIdNumber ?? item.email),
+                        subtitle: Text(item.studentIdNumber ?? item.email),
                         trailing: Text(
                           item.isPresent ? 'Present' : 'Absent',
                           style: TextStyle(

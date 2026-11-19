@@ -1,47 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/widgets/state_views.dart';
 import '../viewmodels/registration_viewmodel.dart';
 
-class MyRegistrationsScreen extends StatefulWidget {
+class MyRegistrationsScreen extends ConsumerStatefulWidget {
   const MyRegistrationsScreen({super.key});
 
   @override
-  State<MyRegistrationsScreen> createState() => _MyRegistrationsScreenState();
+  ConsumerState<MyRegistrationsScreen> createState() =>
+      _MyRegistrationsScreenState();
 }
 
-class _MyRegistrationsScreenState extends State<MyRegistrationsScreen> {
+class _MyRegistrationsScreenState extends ConsumerState<MyRegistrationsScreen> {
   @override
   void initState() {
     super.initState();
     Future.microtask(
       () => mounted
-          ? context.read<RegistrationViewModel>().loadMyRegistrations()
+          ? ref
+              .read(registrationViewModelProvider.notifier)
+              .loadMyRegistrations()
           : null,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<RegistrationViewModel>();
+    final state = ref.watch(registrationViewModelProvider);
+    final notifier = ref.read(registrationViewModelProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(title: const Text('My Events')),
       body: Builder(
         builder: (context) {
-          if (vm.isLoading) {
+          if (state.isLoading) {
             return const LoadingStateView(message: 'Loading your events...');
           }
-          if (vm.errorMessage != null) {
+          if (state.errorMessage != null) {
             return ErrorStateView(
-              message: vm.errorMessage!,
-              onRetry: vm.loadMyRegistrations,
+              message: state.errorMessage!,
+              onRetry: notifier.loadMyRegistrations,
             );
           }
-          if (vm.registrations.isEmpty) {
+          if (state.registrations.isEmpty) {
             return const EmptyStateView(
               icon: Icons.event_busy_outlined,
               title: 'No Registrations Yet',
@@ -50,13 +54,13 @@ class _MyRegistrationsScreenState extends State<MyRegistrationsScreen> {
           }
 
           return RefreshIndicator(
-            onRefresh: vm.loadMyRegistrations,
+            onRefresh: notifier.loadMyRegistrations,
             child: ListView.separated(
               padding: const EdgeInsets.all(16),
-              itemCount: vm.registrations.length,
+              itemCount: state.registrations.length,
               separatorBuilder: (_, _) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
-                final reg = vm.registrations[index];
+                final reg = state.registrations[index];
                 final isCancelled = reg.registrationStatus == 'cancelled';
 
                 return Card(

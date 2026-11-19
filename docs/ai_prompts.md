@@ -21,9 +21,9 @@
 **Prompt:**
 > Inspect `campus_event_app/lib/features/events/repositories/event_repository.dart`. Create `<Feature>Repository` in `campus_event_app/lib/features/<feature>/repositories/` wrapping `<Feature>Service` and converting JSON maps into typed Dart models. Do not modify unrelated repositories.
 
-## 5. Generate a ViewModel (`ChangeNotifier`)
+## 5. Generate a ViewModel (`Notifier` / Riverpod)
 **Prompt:**
-> Inspect `campus_event_app/lib/features/events/viewmodels/event_viewmodel.dart`. Create `<Feature>ViewModel extends ChangeNotifier` with explicit `isLoading`, `errorMessage`, and typed data state. Wrap async repository calls in `try/catch/finally` and call `notifyListeners()` safely. Never make direct `http` calls inside the ViewModel.
+> Inspect `campus_event_app/lib/features/events/viewmodels/event_viewmodel.dart`. Create an immutable `<Feature>State` class with `copyWith()` and `<Feature>ViewModel extends Notifier<<Feature>State>` exposed via `NotifierProvider`. Wrap async repository calls in `try/catch` and update `state` cleanly. Never make direct `http` calls inside the ViewModel.
 
 ## 6. Generate Reusable Widgets
 **Prompt:**

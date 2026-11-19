@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/widgets/state_views.dart';
@@ -8,32 +8,36 @@ import '../../auth/viewmodels/auth_viewmodel.dart';
 import '../../registrations/viewmodels/registration_viewmodel.dart';
 import '../viewmodels/event_viewmodel.dart';
 
-class EventDetailScreen extends StatefulWidget {
+class EventDetailScreen extends ConsumerStatefulWidget {
   const EventDetailScreen({super.key, required this.eventId});
 
   final int eventId;
 
   @override
-  State<EventDetailScreen> createState() => _EventDetailScreenState();
+  ConsumerState<EventDetailScreen> createState() => _EventDetailScreenState();
 }
 
-class _EventDetailScreenState extends State<EventDetailScreen> {
+class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   @override
   void initState() {
     super.initState();
     Future.microtask(() => mounted
-        ? context.read<EventViewModel>().loadEventDetail(widget.eventId)
+        ? ref
+            .read(eventViewModelProvider.notifier)
+            .loadEventDetail(widget.eventId)
         : null);
   }
 
   Future<void> _handleRegister() async {
-    final regVm = context.read<RegistrationViewModel>();
-    final eventVm = context.read<EventViewModel>();
-    final err = await regVm.registerForEvent(widget.eventId);
+    final err = await ref
+        .read(registrationViewModelProvider.notifier)
+        .registerForEvent(widget.eventId);
 
     if (!mounted) return;
     if (err == null) {
-      await eventVm.loadEventDetail(widget.eventId);
+      await ref
+          .read(eventViewModelProvider.notifier)
+          .loadEventDetail(widget.eventId);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Registered for event!')),
@@ -49,13 +53,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   }
 
   Future<void> _handleCancelRegistration() async {
-    final regVm = context.read<RegistrationViewModel>();
-    final eventVm = context.read<EventViewModel>();
-    final err = await regVm.cancelRegistration(widget.eventId);
+    final err = await ref
+        .read(registrationViewModelProvider.notifier)
+        .cancelRegistration(widget.eventId);
 
     if (!mounted) return;
     if (err == null) {
-      await eventVm.loadEventDetail(widget.eventId);
+      await ref
+          .read(eventViewModelProvider.notifier)
+          .loadEventDetail(widget.eventId);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Registration cancelled')),
@@ -72,10 +78,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final eventVm = context.watch<EventViewModel>();
-    final regVm = context.watch<RegistrationViewModel>();
-    final user = context.watch<AuthViewModel>().currentUser;
-    final event = eventVm.selectedEvent;
+    final eventState = ref.watch(eventViewModelProvider);
+    final regState = ref.watch(registrationViewModelProvider);
+    final user = ref.watch(authViewModelProvider).currentUser;
+    final event = eventState.selectedEvent;
 
     return Scaffold(
       appBar: AppBar(
@@ -94,13 +100,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       ),
       body: Builder(
         builder: (context) {
-          if (eventVm.isLoading && event == null) {
+          if (eventState.isLoading && event == null) {
             return const LoadingStateView(message: 'Loading event...');
           }
-          if (eventVm.errorMessage != null && event == null) {
+          if (eventState.errorMessage != null && event == null) {
             return ErrorStateView(
-              message: eventVm.errorMessage!,
-              onRetry: () => eventVm.loadEventDetail(widget.eventId),
+              message: eventState.errorMessage!,
+              onRetry: () => ref
+                  .read(eventViewModelProvider.notifier)
+                  .loadEventDetail(widget.eventId),
             );
           }
           if (event == null) {
@@ -196,7 +204,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         ),
                         const SizedBox(height: 10),
                         OutlinedButton(
-                          onPressed: regVm.isSubmitting
+                          onPressed: regState.isSubmitting
                               ? null
                               : _handleCancelRegistration,
                           child: const Text('Cancel Registration'),
@@ -205,7 +213,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     )
                   else
                     FilledButton(
-                      onPressed: (regVm.isSubmitting ||
+                      onPressed: (regState.isSubmitting ||
                               event.isFull ||
                               event.status != 'published')
                           ? null

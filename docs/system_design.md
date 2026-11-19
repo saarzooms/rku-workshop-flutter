@@ -7,7 +7,7 @@
 flowchart LR
     subgraph Mobile["Android Mobile App (Flutter)"]
         UI["Presentation Layer (Views & Widgets)"]
-        VM["ViewModel Layer (ChangeNotifier / Provider)"]
+        VM["ViewModel Layer (Riverpod Notifier / State)"]
         REPO["Repository Layer"]
         SVC["API & Storage Services (http, SecureStorage, FCM)"]
         UI --> VM --> REPO --> SVC
@@ -54,8 +54,8 @@ Each feature in `campus_event_app/lib/features/<feature>/` is organized into cle
 1. **Models (`models/`)**: Immutable Dart classes with `fromJson()` and `toJson()` factories.
 2. **Services (`services/`)**: Thin classes calling `ApiClient` (`http`) or device plugins (`FlutterSecureStorage`, `FirebaseMessaging`). No UI state.
 3. **Repositories (`repositories/`)**: Coordinate data fetching/caching and transform raw responses or exceptions into domain models.
-4. **ViewModels (`viewmodels/`)**: Extend `ChangeNotifier` (via `provider`). Hold UI state (`isLoading`, `errorMessage`, data lists) and expose user actions (`loadEvents()`, `register()`). Never perform raw HTTP calls.
-5. **Views (`views/`)**: Stateless/Stateful `Widget` screens that observe ViewModels via `context.watch<T>()` / `Consumer<T>()` and trigger actions via `context.read<T>()`.
+4. **ViewModels (`viewmodels/`)**: Extend `Notifier<State>` (via `flutter_riverpod`). Hold immutable UI state (`isLoading`, `errorMessage`, data lists) and expose user actions (`loadEvents()`, `register()`). Never perform raw HTTP calls.
+5. **Views (`views/`)**: `ConsumerWidget` / `ConsumerStatefulWidget` screens that observe ViewModels via `ref.watch(...)` and trigger actions via `ref.read(...notifier)`.
 
 ---
 

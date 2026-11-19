@@ -6,7 +6,7 @@ A complete, beginner-friendly **8–10 hour workshop project** demonstrating how
 Open [`docs/campus_event_codelab.html`](docs/campus_event_codelab.html) in any web browser for the 14-chapter step-by-step Google Codelabs-style tutorial.
 
 ## Technologies
-- **Mobile App**: Flutter 3.x (Material 3, `provider`, `go_router`, `http`, `flutter_secure_storage`, `qr_flutter`, `mobile_scanner`, `firebase_messaging`)
+- **Mobile App**: Flutter 3.x (Material 3, `flutter_riverpod`, `go_router`, `http`, `flutter_secure_storage`, `qr_flutter`, `mobile_scanner`, `firebase_messaging`)
 - **Backend**: PHP 8.x REST API (PDO prepared statements, opaque SHA-256 bearer tokens, role-based middleware)
 - **Database**: MySQL 8.x / MariaDB
 - **Push Notifications**: Firebase Cloud Messaging (HTTP v1)

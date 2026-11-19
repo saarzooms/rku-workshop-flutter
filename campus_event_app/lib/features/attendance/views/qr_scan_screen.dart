@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:provider/provider.dart';
 
 import '../viewmodels/attendance_viewmodel.dart';
 
-class QrScanScreen extends StatefulWidget {
+class QrScanScreen extends ConsumerStatefulWidget {
   const QrScanScreen({super.key});
 
   @override
-  State<QrScanScreen> createState() => _QrScanScreenState();
+  ConsumerState<QrScanScreen> createState() => _QrScanScreenState();
 }
 
-class _QrScanScreenState extends State<QrScanScreen> {
+class _QrScanScreenState extends ConsumerState<QrScanScreen> {
   final _manualController = TextEditingController();
   bool _hasScanned = false;
 
@@ -25,8 +25,9 @@ class _QrScanScreenState extends State<QrScanScreen> {
     if (token.trim().isEmpty || _hasScanned) return;
     setState(() => _hasScanned = true);
 
-    final vm = context.read<AttendanceViewModel>();
-    final result = await vm.verifyQrToken(token.trim());
+    final result = await ref
+        .read(attendanceViewModelProvider.notifier)
+        .verifyQrToken(token.trim());
 
     if (!mounted) return;
     await showDialog<void>(
@@ -54,7 +55,7 @@ class _QrScanScreenState extends State<QrScanScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = context.watch<AttendanceViewModel>().isLoading;
+    final isLoading = ref.watch(attendanceViewModelProvider).isLoading;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Scan Attendance QR')),

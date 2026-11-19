@@ -1,30 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 import '../../../core/widgets/event_card.dart';
 import '../../events/viewmodels/event_viewmodel.dart';
 
-class OrganizerDashboardTab extends StatefulWidget {
+class OrganizerDashboardTab extends ConsumerStatefulWidget {
   const OrganizerDashboardTab({super.key});
 
   @override
-  State<OrganizerDashboardTab> createState() => _OrganizerDashboardTabState();
+  ConsumerState<OrganizerDashboardTab> createState() =>
+      _OrganizerDashboardTabState();
 }
 
-class _OrganizerDashboardTabState extends State<OrganizerDashboardTab> {
+class _OrganizerDashboardTabState extends ConsumerState<OrganizerDashboardTab> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() =>
-        mounted ? context.read<EventViewModel>().loadEvents(mine: true) : null);
+    Future.microtask(() => mounted
+        ? ref.read(eventViewModelProvider.notifier).loadEvents(mine: true)
+        : null);
   }
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<EventViewModel>();
+    final state = ref.watch(eventViewModelProvider);
     final totalReg =
-        vm.events.fold<int>(0, (sum, e) => sum + e.registeredCount);
+        state.events.fold<int>(0, (sum, e) => sum + e.registeredCount);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Organizer Dashboard')),
@@ -34,7 +36,8 @@ class _OrganizerDashboardTabState extends State<OrganizerDashboardTab> {
         label: const Text('Create Event'),
       ),
       body: RefreshIndicator(
-        onRefresh: () => vm.loadEvents(mine: true),
+        onRefresh: () =>
+            ref.read(eventViewModelProvider.notifier).loadEvents(mine: true),
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -43,7 +46,7 @@ class _OrganizerDashboardTabState extends State<OrganizerDashboardTab> {
                 Expanded(
                   child: _MetricCard(
                     title: 'My Events',
-                    value: vm.events.length.toString(),
+                    value: state.events.length.toString(),
                     icon: Icons.event_available,
                   ),
                 ),
@@ -66,12 +69,12 @@ class _OrganizerDashboardTabState extends State<OrganizerDashboardTab> {
                   ?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 10),
-            if (vm.isLoading && vm.events.isEmpty)
+            if (state.isLoading && state.events.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(32),
                 child: Center(child: CircularProgressIndicator()),
               )
-            else if (vm.events.isEmpty)
+            else if (state.events.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(24),
                 child: Center(
@@ -79,7 +82,7 @@ class _OrganizerDashboardTabState extends State<OrganizerDashboardTab> {
                 ),
               )
             else
-              ...vm.events.map(
+              ...state.events.map(
                 (event) => Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: EventCard(

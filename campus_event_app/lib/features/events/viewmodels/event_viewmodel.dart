@@ -1,85 +1,124 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/api_exception.dart';
+import '../../../core/providers/core_providers.dart';
 import '../models/event_model.dart';
 import '../repositories/event_repository.dart';
+import '../services/event_service.dart';
 
-class EventViewModel extends ChangeNotifier {
-  EventViewModel(this._repository);
+class EventState {
+  const EventState({
+    this.events = const [],
+    this.categories = const [],
+    this.selectedEvent,
+    this.isLoading = false,
+    this.isSubmitting = false,
+    this.errorMessage,
+    this.selectedCategoryId,
+    this.searchQuery = '',
+  });
 
-  final EventRepository _repository;
+  final List<EventModel> events;
+  final List<CategoryModel> categories;
+  final EventModel? selectedEvent;
+  final bool isLoading;
+  final bool isSubmitting;
+  final String? errorMessage;
+  final int? selectedCategoryId;
+  final String searchQuery;
 
-  List<EventModel> _events = [];
-  List<CategoryModel> _categories = [];
-  EventModel? _selectedEvent;
-  bool _isLoading = false;
-  bool _isSubmitting = false;
-  String? _errorMessage;
-  int? _selectedCategoryId;
-  String _searchQuery = '';
+  EventState copyWith({
+    List<EventModel>? events,
+    List<CategoryModel>? categories,
+    EventModel? selectedEvent,
+    bool? isLoading,
+    bool? isSubmitting,
+    String? errorMessage,
+    bool clearError = false,
+    int? selectedCategoryId,
+    bool clearCategory = false,
+    String? searchQuery,
+  }) {
+    return EventState(
+      events: events ?? this.events,
+      categories: categories ?? this.categories,
+      selectedEvent: selectedEvent ?? this.selectedEvent,
+      isLoading: isLoading ?? this.isLoading,
+      isSubmitting: isSubmitting ?? this.isSubmitting,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      selectedCategoryId:
+          clearCategory ? null : (selectedCategoryId ?? this.selectedCategoryId),
+      searchQuery: searchQuery ?? this.searchQuery,
+    );
+  }
+}
 
-  List<EventModel> get events => _events;
-  List<CategoryModel> get categories => _categories;
-  EventModel? get selectedEvent => _selectedEvent;
-  bool get isLoading => _isLoading;
-  bool get isSubmitting => _isSubmitting;
-  String? get errorMessage => _errorMessage;
-  int? get selectedCategoryId => _selectedCategoryId;
+final eventRepositoryProvider = Provider<EventRepository>((ref) {
+  return EventRepository(EventService(ref.watch(apiClientProvider)));
+});
+
+final eventViewModelProvider =
+    NotifierProvider<EventViewModel, EventState>(EventViewModel.new);
+
+class EventViewModel extends Notifier<EventState> {
+  @override
+  EventState build() => const EventState();
+
+  EventRepository get _repository => ref.read(eventRepositoryProvider);
 
   Future<void> loadCategories() async {
     try {
-      _categories = await _repository.getCategories();
-      notifyListeners();
+      final cats = await _repository.getCategories();
+      state = state.copyWith(categories: cats);
     } catch (_) {
-      // Categories are non-fatal; keep existing list
+      // Non-fatal
     }
   }
 
   Future<void> loadEvents({bool mine = false}) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
+    state = state.copyWith(isLoading: true, clearError: true);
     try {
-      _events = await _repository.getEvents(
-        search: _searchQuery,
-        categoryId: _selectedCategoryId,
+      final items = await _repository.getEvents(
+        search: state.searchQuery,
+        categoryId: state.selectedCategoryId,
         mine: mine,
       );
+      state = state.copyWith(events: items, isLoading: false);
     } on ApiException catch (e) {
-      _errorMessage = e.message;
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
     } catch (_) {
-      _errorMessage = 'Failed to load events.';
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Failed to load events.',
+      );
     }
   }
 
   Future<void> loadEventDetail(int id) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
+    state = state.copyWith(isLoading: true, clearError: true);
     try {
-      _selectedEvent = await _repository.getEventDetail(id);
+      final detail = await _repository.getEventDetail(id);
+      state = state.copyWith(selectedEvent: detail, isLoading: false);
     } on ApiException catch (e) {
-      _errorMessage = e.message;
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
     } catch (_) {
-      _errorMessage = 'Failed to load event details.';
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Failed to load event details.',
+      );
     }
   }
 
   void setCategoryFilter(int? categoryId, {bool mine = false}) {
-    _selectedCategoryId = categoryId;
+    state = state.copyWith(
+      selectedCategoryId: categoryId,
+      clearCategory: categoryId == null,
+    );
     loadEvents(mine: mine);
   }
 
   void setSearchQuery(String query, {bool mine = false}) {
-    _searchQuery = query;
+    state = state.copyWith(searchQuery: query);
     loadEvents(mine: mine);
   }
 
@@ -87,10 +126,7 @@ class EventViewModel extends ChangeNotifier {
     int? eventId,
     required Map<String, dynamic> payload,
   }) async {
-    _isSubmitting = true;
-    _errorMessage = null;
-    notifyListeners();
-
+    state = state.copyWith(isSubmitting: true, clearError: true);
     try {
       if (eventId == null) {
         await _repository.createEvent(payload);
@@ -98,34 +134,30 @@ class EventViewModel extends ChangeNotifier {
         await _repository.updateEvent(eventId, payload);
       }
       await loadEvents();
+      state = state.copyWith(isSubmitting: false);
       return true;
     } on ApiException catch (e) {
-      _errorMessage = e.message;
+      state = state.copyWith(isSubmitting: false, errorMessage: e.message);
       return false;
     } catch (_) {
-      _errorMessage = 'Could not save event.';
+      state = state.copyWith(
+        isSubmitting: false,
+        errorMessage: 'Could not save event.',
+      );
       return false;
-    } finally {
-      _isSubmitting = false;
-      notifyListeners();
     }
   }
 
   Future<bool> cancelEvent(int eventId) async {
-    _isSubmitting = true;
-    _errorMessage = null;
-    notifyListeners();
-
+    state = state.copyWith(isSubmitting: true, clearError: true);
     try {
       await _repository.cancelEvent(eventId);
       await loadEvents(mine: true);
+      state = state.copyWith(isSubmitting: false);
       return true;
     } on ApiException catch (e) {
-      _errorMessage = e.message;
+      state = state.copyWith(isSubmitting: false, errorMessage: e.message);
       return false;
-    } finally {
-      _isSubmitting = false;
-      notifyListeners();
     }
   }
 }

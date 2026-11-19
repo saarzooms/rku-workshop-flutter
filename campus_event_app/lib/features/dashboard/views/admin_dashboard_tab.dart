@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/api_constants.dart';
-import '../../../core/network/api_client.dart';
+import '../../../core/providers/core_providers.dart';
 import '../../../core/widgets/state_views.dart';
 
-class AdminDashboardTab extends StatefulWidget {
+class AdminDashboardTab extends ConsumerStatefulWidget {
   const AdminDashboardTab({super.key});
 
   @override
-  State<AdminDashboardTab> createState() => _AdminDashboardTabState();
+  ConsumerState<AdminDashboardTab> createState() => _AdminDashboardTabState();
 }
 
-class _AdminDashboardTabState extends State<AdminDashboardTab> {
+class _AdminDashboardTabState extends ConsumerState<AdminDashboardTab> {
   Map<String, dynamic>? _stats;
   bool _isLoading = true;
   String? _error;
@@ -30,7 +30,7 @@ class _AdminDashboardTabState extends State<AdminDashboardTab> {
     });
     try {
       final resp =
-          await context.read<ApiClient>().get(ApiConstants.adminStats);
+          await ref.read(apiClientProvider).get(ApiConstants.adminStats);
       setState(() {
         _stats = resp['data']?['stats'] as Map<String, dynamic>?;
       });

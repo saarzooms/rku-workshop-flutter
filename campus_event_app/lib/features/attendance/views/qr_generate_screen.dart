@@ -1,49 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../core/widgets/state_views.dart';
 import '../viewmodels/attendance_viewmodel.dart';
 
-class QrGenerateScreen extends StatefulWidget {
+class QrGenerateScreen extends ConsumerStatefulWidget {
   const QrGenerateScreen({super.key, required this.eventId, this.eventTitle});
 
   final int eventId;
   final String? eventTitle;
 
   @override
-  State<QrGenerateScreen> createState() => _QrGenerateScreenState();
+  ConsumerState<QrGenerateScreen> createState() => _QrGenerateScreenState();
 }
 
-class _QrGenerateScreenState extends State<QrGenerateScreen> {
+class _QrGenerateScreenState extends ConsumerState<QrGenerateScreen> {
   @override
   void initState() {
     super.initState();
     Future.microtask(() => mounted
-        ? context.read<AttendanceViewModel>().generateQr(widget.eventId)
+        ? ref
+            .read(attendanceViewModelProvider.notifier)
+            .generateQr(widget.eventId)
         : null);
   }
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<AttendanceViewModel>();
+    final state = ref.watch(attendanceViewModelProvider);
+    final notifier = ref.read(attendanceViewModelProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Attendance QR Code')),
       body: Builder(
         builder: (context) {
-          if (vm.isLoading) {
+          if (state.isLoading) {
             return const LoadingStateView(message: 'Generating secure QR...');
           }
-          if (vm.errorMessage != null) {
+          if (state.errorMessage != null) {
             return ErrorStateView(
-              message: vm.errorMessage!,
-              onRetry: () => vm.generateQr(widget.eventId),
+              message: state.errorMessage!,
+              onRetry: () => notifier.generateQr(widget.eventId),
             );
           }
 
-          final qr = vm.activeQr;
+          final qr = state.activeQr;
           if (qr == null) {
             return const SizedBox.shrink();
           }
@@ -102,7 +105,7 @@ class _QrGenerateScreenState extends State<QrGenerateScreen> {
                       ),
                       const SizedBox(width: 12),
                       FilledButton.icon(
-                        onPressed: () => vm.generateQr(widget.eventId),
+                        onPressed: () => notifier.generateQr(widget.eventId),
                         icon: const Icon(Icons.refresh),
                         label: const Text('Regenerate'),
                       ),

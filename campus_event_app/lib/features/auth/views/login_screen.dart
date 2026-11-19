@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 import '../viewmodels/auth_viewmodel.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -27,28 +27,30 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final authVm = context.read<AuthViewModel>();
-    final success = await authVm.login(
-      _emailController.text.trim(),
-      _passwordController.text,
-    );
+    final success = await ref.read(authViewModelProvider.notifier).login(
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
 
     if (!mounted) return;
     if (success) {
       context.go('/home');
-    } else if (authVm.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(authVm.errorMessage!),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
+    } else {
+      final err = ref.read(authViewModelProvider).errorMessage;
+      if (err != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(err),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = context.watch<AuthViewModel>().isLoading;
+    final isLoading = ref.watch(authViewModelProvider).isLoading;
 
     return Scaffold(
       body: SafeArea(

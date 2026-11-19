@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 import '../../../core/constants/api_constants.dart';
-import '../../../core/network/api_client.dart';
+import '../../../core/providers/core_providers.dart';
 import '../../auth/models/user_model.dart';
 import '../../auth/viewmodels/auth_viewmodel.dart';
 
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _nameController = TextEditingController();
   final _deptController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -23,7 +23,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    final user = context.read<AuthViewModel>().currentUser;
+    final user = ref.read(authViewModelProvider).currentUser;
     _nameController.text = user?.fullName ?? '';
     _deptController.text = user?.department ?? '';
     _phoneController.text = user?.phone ?? '';
@@ -40,7 +40,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _saveProfile() async {
     setState(() => _isSaving = true);
     try {
-      final api = context.read<ApiClient>();
+      final api = ref.read(apiClientProvider);
       final resp = await api.put(
         ApiConstants.profile,
         body: {
@@ -49,9 +49,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'phone': _phoneController.text.trim(),
         },
       );
-      final updated = UserModel.fromJson(resp['data']['user'] as Map<String, dynamic>);
+      final updated =
+          UserModel.fromJson(resp['data']['user'] as Map<String, dynamic>);
       if (!mounted) return;
-      context.read<AuthViewModel>().updateUser(updated);
+      ref.read(authViewModelProvider.notifier).updateUser(updated);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profile updated')),
       );
@@ -67,9 +68,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authVm = context.watch<AuthViewModel>();
-    final user = authVm.currentUser;
-
+    final user = ref.watch(authViewModelProvider).currentUser;
     if (user == null) {
       return const SizedBox.shrink();
     }
@@ -142,7 +141,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: () async {
-                await authVm.logout();
+                await ref.read(authViewModelProvider.notifier).logout();
                 if (context.mounted) {
                   context.go('/login');
                 }

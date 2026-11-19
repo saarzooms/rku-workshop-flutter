@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 import '../viewmodels/auth_viewmodel.dart';
 
-class RegisterScreen extends StatefulWidget {
+class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -32,35 +32,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final authVm = context.read<AuthViewModel>();
-    final success = await authVm.register(
-      fullName: _nameController.text.trim(),
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-      studentIdNumber: _studentIdController.text.trim().isEmpty
-          ? null
-          : _studentIdController.text.trim(),
-      department: _departmentController.text.trim().isEmpty
-          ? null
-          : _departmentController.text.trim(),
-    );
+    final success = await ref.read(authViewModelProvider.notifier).register(
+          fullName: _nameController.text.trim(),
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+          studentIdNumber: _studentIdController.text.trim().isEmpty
+              ? null
+              : _studentIdController.text.trim(),
+          department: _departmentController.text.trim().isEmpty
+              ? null
+              : _departmentController.text.trim(),
+        );
 
     if (!mounted) return;
     if (success) {
       context.go('/home');
-    } else if (authVm.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(authVm.errorMessage!),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
+    } else {
+      final err = ref.read(authViewModelProvider).errorMessage;
+      if (err != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(err),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = context.watch<AuthViewModel>().isLoading;
+    final isLoading = ref.watch(authViewModelProvider).isLoading;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Student Registration')),

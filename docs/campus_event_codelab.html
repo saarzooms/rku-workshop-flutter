@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Codelab: Campus Event &amp; Attendance Management System (Flutter + PHP)</title>
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" defer></script>
+  <title>Codelab: Campus Event &amp; Attendance Management System (Flutter + Riverpod + PHP)</title>
   <style>
     :root {
       --primary: #1e3a8a;
       --primary-light: #eff6ff;
       --accent: #0d9488;
+      --accent-light: #f0fdfa;
       --bg: #f8fafc;
       --surface: #ffffff;
       --text: #0f172a;
@@ -21,7 +21,9 @@
       --warn-border: #f59e0b;
       --ok-bg: #ecfdf5;
       --ok-border: #10b981;
-      --sidebar-w: 290px;
+      --err-bg: #fef2f2;
+      --err-border: #ef4444;
+      --sidebar-w: 300px;
     }
     * { box-sizing: border-box; }
     body {
@@ -29,7 +31,7 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
       background: var(--bg);
       color: var(--text);
-      line-height: 1.65;
+      line-height: 1.7;
     }
     header.topbar {
       position: fixed; top: 0; left: 0; right: 0; height: 60px; z-index: 50;
@@ -54,7 +56,7 @@
     .nav-item {
       display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
       padding: 10px 12px; margin-bottom: 4px; border: none; border-radius: 10px;
-      background: transparent; color: var(--muted); cursor: pointer; font-size: 0.9rem;
+      background: transparent; color: var(--muted); cursor: pointer; font-size: 0.88rem;
     }
     .nav-item:hover { background: var(--bg); color: var(--text); }
     .nav-item.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
@@ -68,31 +70,43 @@
 
     main.content {
       margin-left: var(--sidebar-w); margin-top: 60px;
-      padding: 28px 24px 100px; max-width: 960px;
+      padding: 28px 24px 100px; max-width: 980px;
     }
     .chapter { display: none; }
     .chapter.active { display: block; }
     .card {
       background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
-      padding: 24px 28px; margin-bottom: 20px; box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+      padding: 26px 30px; margin-bottom: 22px; box-shadow: 0 1px 3px rgba(15,23,42,0.05);
     }
-    .meta-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+    .meta-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
     .badge {
-      display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 600;
       padding: 4px 10px; border-radius: 99px; background: var(--primary-light); color: var(--primary);
     }
-    h1 { margin: 0 0 8px; font-size: 1.75rem; color: var(--text); }
-    h2 { margin-top: 24px; font-size: 1.2rem; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 6px; }
-    h3 { margin-top: 18px; font-size: 1.02rem; color: var(--text); }
+    .badge.teal { background: var(--accent-light); color: var(--accent); }
+    h1 { margin: 0 0 10px; font-size: 1.75rem; color: var(--text); line-height: 1.3; }
+    h2 { margin-top: 26px; font-size: 1.22rem; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+    h3 { margin-top: 18px; font-size: 1.03rem; color: var(--text); }
 
     .callout {
       border-left: 4px solid var(--primary); background: var(--primary-light);
-      padding: 12px 16px; border-radius: 0 10px 10px 0; margin: 14px 0;
+      padding: 13px 16px; border-radius: 0 10px 10px 0; margin: 14px 0;
     }
     .callout.warn { border-left-color: var(--warn-border); background: var(--warn-bg); }
     .callout.ok { border-left-color: var(--ok-border); background: var(--ok-bg); }
+    .callout.err { border-left-color: var(--err-border); background: var(--err-bg); }
+
+    .diagram-box {
+      background: #ffffff; border: 1px solid var(--border); border-radius: 12px;
+      padding: 16px; margin: 16px 0; overflow-x: auto; text-align: center;
+    }
+    .diagram-caption { font-size: 0.84rem; color: var(--muted); margin-top: 8px; font-style: italic; }
 
     .code-wrap { position: relative; margin: 14px 0; }
+    .file-pill {
+      display: inline-block; background: #1e293b; color: #93c5fd; font-family: monospace;
+      font-size: 0.76rem; padding: 3px 10px; border-radius: 8px 8px 0 0; margin-bottom: -2px;
+    }
     .copy-btn {
       position: absolute; top: 8px; right: 8px; background: #1e293b; color: #f8fafc;
       border: 1px solid #334155; border-radius: 6px; padding: 4px 10px;
@@ -101,19 +115,20 @@
     .copy-btn:hover { background: #334155; }
     pre {
       margin: 0; background: var(--code-bg); color: var(--code-fg);
-      padding: 16px; border-radius: 10px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5;
+      padding: 16px; border-radius: 10px; overflow-x: auto; font-size: 0.83rem; line-height: 1.55;
     }
+    .file-pill + .code-wrap pre { border-top-left-radius: 0; }
     code { font-family: "Cascadia Code", "Fira Code", Consolas, monospace; }
-    :not(pre) > code { background: #e2e8f0; color: #0f172a; padding: 2px 6px; border-radius: 5px; font-size: 0.88em; }
+    :not(pre) > code { background: #e2e8f0; color: #0f172a; padding: 2px 6px; border-radius: 5px; font-size: 0.87em; }
 
     details {
       border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px;
       margin: 12px 0; background: #f8fafc;
     }
     summary { font-weight: 600; cursor: pointer; color: var(--primary); }
-    .checklist label { display: flex; align-items: flex-start; gap: 8px; margin: 6px 0; cursor: pointer; }
+    .checklist label { display: flex; align-items: flex-start; gap: 8px; margin: 7px 0; cursor: pointer; }
     table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.9rem; }
-    th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; }
+    th, td { border: 1px solid var(--border); padding: 9px 11px; text-align: left; }
     th { background: #f1f5f9; }
 
     .footer-nav {
@@ -146,7 +161,7 @@
 <header class="topbar">
   <div class="brand">
     <button class="menu-btn" id="menuBtn" aria-label="Toggle chapters">&#9776;</button>
-    <span>Campus Event &amp; Attendance Codelab</span>
+    <span>Campus Event &amp; Attendance Codelab (Flutter + Riverpod + PHP)</span>
   </div>
   <div class="progress-wrap">
     <span id="progressText">Step 1 of 14</span>
@@ -158,42 +173,136 @@
 
 <main class="content" id="contentRoot">
 
-  <!-- CHAPTER 1 -->
-  <section class="chapter active" data-title="1. Introduction" data-time="20 min">
+  <!-- ==================== CHAPTER 1 ==================== -->
+  <section class="chapter active" data-title="1. Introduction" data-time="40 min">
     <div class="card">
       <div class="meta-row">
         <span class="badge">Chapter 1</span>
-        <span class="badge">Est. 20 min</span>
-        <span class="badge">Workshop Overview</span>
+        <span class="badge">Est. 40 min</span>
+        <span class="badge teal">Client Problem &rarr; Solution &amp; Tech Stack</span>
       </div>
       <h1>Build a Campus Event &amp; Attendance Management System</h1>
-      <p><strong>Learning Objective:</strong> Understand the real-world problem, system scope, user roles, and full-stack architecture you will build over this 8–10 hour workshop.</p>
+
+      <h3>Learning Objective</h3>
+      <p>By the end of this chapter, you will know how a software architect translates a real-world <strong>Client Brief</strong> into concrete engineering solutions, how those solutions combine into our <strong>System Ecosystem</strong>, and <em>why</em> we chose each technology (Riverpod, <code>go_router</code>, PHP 8, MySQL, FCM) over its popular alternatives.</p>
+
+      <h2>1. The Client Brief: What Problem Are We Solving?</h2>
       <div class="callout">
-        <strong>Why are we doing this?</strong> Universities run dozens of seminars, workshops, and hackathons every semester. Paper attendance sheets are slow and easy to forge. You will build an end-to-end digital solution with <strong>Flutter</strong>, <strong>PHP 8</strong>, <strong>MySQL</strong>, <strong>QR Codes</strong>, and <strong>Firebase Cloud Messaging (FCM)</strong>.
+        <strong>Scenario:</strong> Imagine the Dean of Student Affairs at your university hires you to replace their manual event workflow. Here are the exact pain points and requirements they give you:
+        <ol>
+          <li><strong>"Students miss events because announcements are buried in WhatsApp groups."</strong> &rarr; They need one central mobile feed with search and category filters.</li>
+          <li><strong>"Google Forms keep accepting registrations even when the auditorium is full, and students register twice."</strong> &rarr; They need automated seat-capacity enforcement and duplicate-registration prevention.</li>
+          <li><strong>"Paper attendance sheets are slow and students sign for absent friends."</strong> &rarr; They need a fast, tamper-resistant, time-limited QR code check-in that only works for registered students.</li>
+          <li><strong>"When a seminar room changes last minute, nobody knows."</strong> &rarr; They need instant push notifications sent directly to registered students' phones.</li>
+          <li><strong>"Students, Event Organizers, and Admins should see different tools."</strong> &rarr; They need role-based access control (RBAC) enforced securely on a server, not just hidden in the UI.</li>
+        </ol>
       </div>
-      <h2>What You Will Build</h2>
-      <ul>
-        <li><strong>Student Experience:</strong> Discover events, search &amp; filter by category, register with capacity checks, scan organizer QR codes to mark attendance, and receive push notifications.</li>
-        <li><strong>Organizer Experience:</strong> Create/edit/cancel events, view registration counts, generate time-limited attendance QR codes, view attendance reports, and notify registrants.</li>
-        <li><strong>Admin Experience:</strong> Seeded campus administrator account with an overview dashboard of users, events, registrations, and attendance.</li>
-      </ul>
-      <h2>Technologies Used</h2>
+
+      <h2>2. From Client Requirements to System Solutions</h2>
+      <p>Before picking any library or writing a single line of code, let's solve each client requirement architecturally. Watch how the <strong>System Ecosystem</strong> emerges naturally from these decisions:</p>
       <table>
-        <tr><th>Layer</th><th>Technology</th><th>Why We Chose It</th></tr>
-        <tr><td>Mobile App</td><td>Flutter 3.x (Dart, Material 3)</td><td>Fast UI iteration with Hot Reload and strong typing.</td></tr>
-        <tr><td>Backend API</td><td>PHP 8.x (PDO, JSON REST)</td><td>Zero-framework clarity, easy local setup, portable hosting.</td></tr>
-        <tr><td>Database</td><td>MySQL 8 / MariaDB</td><td>Relational integrity with Foreign Keys and Unique Constraints.</td></tr>
-        <tr><td>Push Notifications</td><td>Firebase Cloud Messaging</td><td>Reliable Android push delivery without making Firebase our primary DB.</td></tr>
+        <tr><th>Client Requirement</th><th>Engineering Challenge</th><th>Our Architectural Solution</th></tr>
+        <tr><td>Central mobile app for Android</td><td>Needs fast UI iteration, clean forms, camera access for QR</td><td><strong>Flutter</strong> mobile app with Material 3 &amp; <code>mobile_scanner</code></td></tr>
+        <tr><td>No double registrations or over-capacity</td><td>Client apps cannot be trusted alone; two students may tap "Register" at the exact same millisecond</td><td><strong>Centralized REST API (PHP 8)</strong> + <strong>MySQL</strong> <code>UNIQUE (event_id, user_id)</code> constraint</td></tr>
+        <tr><td>Tamper-resistant QR attendance</td><td>Static QR codes can be photographed and shared on WhatsApp</td><td>Organizer generates a <strong>15-minute expiring cryptographic token</strong> stored hashed in MySQL; backend verifies registration + expiry</td></tr>
+        <tr><td>Instant room-change alerts</td><td>HTTP polling drains battery and misses backgrounded apps</td><td><strong>Firebase Cloud Messaging (FCM HTTP v1)</strong> triggered by the PHP backend</td></tr>
+        <tr><td>Separate Student / Organizer / Admin flows</td><td>Needs secure login and role enforcement</td><td>Server-issued opaque <strong>Bearer Tokens</strong> (SHA-256 hashed in <code>user_sessions</code>) + Role Middleware</td></tr>
       </table>
-      <h2>Checkpoint</h2>
+
+      <h2>3. The Resulting System Ecosystem</h2>
+      <div class="diagram-box">
+        <svg viewBox="0 0 820 260" width="100%" style="max-width:780px" role="img" aria-label="Campus Event System Ecosystem">
+          <defs>
+            <marker id="arrow1" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+              <polygon points="0 0, 10 3.5, 0 7" fill="#1e3a8a"/>
+            </marker>
+          </defs>
+          <rect x="20" y="25" width="210" height="65" rx="12" fill="#eff6ff" stroke="#1e3a8a" stroke-width="2"/>
+          <text x="125" y="52" text-anchor="middle" font-weight="700" fill="#1e3a8a" font-size="14">Student</text>
+          <text x="125" y="72" text-anchor="middle" fill="#475569" font-size="11">Browse, Register, Scan QR</text>
+
+          <rect x="20" y="105" width="210" height="65" rx="12" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+          <text x="125" y="132" text-anchor="middle" font-weight="700" fill="#0d9488" font-size="14">Event Organizer</text>
+          <text x="125" y="152" text-anchor="middle" fill="#475569" font-size="11">Create Events, Show QR, Reports</text>
+
+          <rect x="20" y="185" width="210" height="60" rx="12" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+          <text x="125" y="210" text-anchor="middle" font-weight="700" fill="#b45309" font-size="14">Administrator</text>
+          <text x="125" y="229" text-anchor="middle" fill="#475569" font-size="11">Campus Stats, Categories, Users</text>
+
+          <rect x="310" y="75" width="200" height="110" rx="14" fill="#1e3a8a"/>
+          <text x="410" y="115" text-anchor="middle" font-weight="700" fill="#ffffff" font-size="15">Flutter Mobile App</text>
+          <text x="410" y="137" text-anchor="middle" fill="#bfdbfe" font-size="11">Material 3 + Riverpod</text>
+          <text x="410" y="155" text-anchor="middle" fill="#bfdbfe" font-size="11">MVVM + Repository</text>
+
+          <rect x="590" y="45" width="205" height="80" rx="12" fill="#0f172a"/>
+          <text x="692" y="78" text-anchor="middle" font-weight="700" fill="#ffffff" font-size="14">PHP 8 REST API</text>
+          <text x="692" y="98" text-anchor="middle" fill="#94a3b8" font-size="11">PDO + MySQL 8 Database</text>
+
+          <rect x="590" y="155" width="205" height="70" rx="12" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+          <text x="692" y="185" text-anchor="middle" font-weight="700" fill="#c2410c" font-size="14">Firebase Cloud Messaging</text>
+          <text x="692" y="205" text-anchor="middle" fill="#475569" font-size="11">Push Notifications (HTTP v1)</text>
+
+          <line x1="230" y1="58" x2="308" y2="115" stroke="#1e3a8a" stroke-width="2" marker-end="url(#arrow1)"/>
+          <line x1="230" y1="138" x2="308" y2="138" stroke="#1e3a8a" stroke-width="2" marker-end="url(#arrow1)"/>
+          <line x1="230" y1="215" x2="308" y2="155" stroke="#1e3a8a" stroke-width="2" marker-end="url(#arrow1)"/>
+          <line x1="510" y1="115" x2="588" y2="85" stroke="#1e3a8a" stroke-width="2" marker-end="url(#arrow1)"/>
+          <line x1="692" y1="125" x2="692" y2="153" stroke="#1e3a8a" stroke-width="2" marker-end="url(#arrow1)"/>
+          <line x1="590" y1="190" x2="512" y2="155" stroke="#1e3a8a" stroke-width="2" marker-end="url(#arrow1)"/>
+        </svg>
+        <div class="diagram-caption">Figure 1.1: High-level ecosystem showing how all 3 roles interact with the Flutter app, PHP/MySQL backend, and FCM.</div>
+      </div>
+
+      <h2>4. Technology Choices &amp; Alternatives Comparison</h2>
+      <p>In real engineering, there is never only one tool. Here is <strong>what alternatives exist</strong> and <strong>why we chose our stack</strong> for this project:</p>
+
+      <h3>A. State Management: Why <code>flutter_riverpod</code>?</h3>
+      <table>
+        <tr><th>Option</th><th>Pros</th><th>Cons / Why Not Chosen Here</th></tr>
+        <tr><td><code>setState</code></td><td>Zero packages, built into Flutter</td><td>Ties business logic to UI widgets; hard to share auth or event state across multiple screens.</td></tr>
+        <tr><td><code>provider</code></td><td>Simple, historically popular</td><td>Depends on <code>BuildContext</code> (runtime <code>ProviderNotFoundException</code> if misused); superseded by Riverpod from the same author.</td></tr>
+        <tr><td><code>flutter_bloc</code></td><td>Strict event/state separation</td><td>High boilerplate (Events + States + Blocs) for an 8–10 hour beginner workshop.</td></tr>
+        <tr><td><code>GetX</code></td><td>Very short syntax</td><td>Mixes routing, DI, and state globally; discourages clean architectural boundaries.</td></tr>
+        <tr><td><strong><code>flutter_riverpod</code> (Chosen)</strong></td><td><strong>Compile-safe, no <code>BuildContext</code> needed, easy test overrides, clean <code>Notifier</code> + immutable state</strong></td><td>Slight learning curve for <code>ref.watch</code> vs <code>ref.read</code> (which we explain clearly in Chapter 6 &amp; 9).</td></tr>
+      </table>
+
+      <h3>B. Navigation: Why <code>go_router</code> over <code>Navigator</code>?</h3>
+      <table>
+        <tr><th>Option</th><th>Pros</th><th>Cons / Why Not Chosen Here</th></tr>
+        <tr><td>Imperative <code>Navigator.push/pop</code></td><td>Built into Flutter, good for 2–3 screens</td><td>Auth redirects (e.g., kicking unauthenticated users to <code>/login</code>) and deep-linking from push notifications (<code>/events/42</code>) require complex manual route stacks.</td></tr>
+        <tr><td><code>auto_route</code></td><td>Strongly typed code generation</td><td>Requires running <code>build_runner</code> on every route change, slowing down beginners.</td></tr>
+        <tr><td><strong><code>go_router</code> (Chosen)</strong></td><td><strong>Official Flutter-maintained declarative router with URL paths (<code>/events/:id</code>), built-in <code>redirect</code> auth guards, and zero codegen</strong></td><td>Slightly more initial setup than <code>Navigator.push</code>, but pays off immediately for auth + notification deep links.</td></tr>
+      </table>
+
+      <h3>C. Database: Why <code>MySQL</code> over PostgreSQL, MongoDB, or Cloud Firestore?</h3>
+      <table>
+        <tr><th>Option</th><th>Strengths</th><th>Why Not Chosen as Primary DB Here</th></tr>
+        <tr><td><strong>PostgreSQL</strong></td><td>Advanced SQL features, JSONB, strict standards</td><td>Excellent production alternative, but requires separate installation/pgAdmin setup compared to XAMPP's one-click MySQL on Windows/macOS.</td></tr>
+        <tr><td><strong>MongoDB (NoSQL)</strong></td><td>Flexible JSON documents, fast prototyping</td><td>Campus events, registrations, and attendance are <em>strongly relational</em> (joins across users, events, categories). NoSQL lacks native cross-collection foreign-key integrity.</td></tr>
+        <tr><td><strong>Cloud Firestore</strong></td><td>Real-time sync, serverless</td><td>Vendor lock-in, NoSQL query limitations (no SQL <code>JOIN</code> or <code>GROUP BY</code> reports), and costs scale by document reads.</td></tr>
+        <tr><td><strong>SQLite</strong></td><td>Zero-config single file</td><td>Great for local phone storage, not a multi-user concurrent server database.</td></tr>
+        <tr><td><strong>MySQL 8 / MariaDB (Chosen)</strong></td><td><strong>Enforces <code>FOREIGN KEY</code> &amp; <code>UNIQUE</code> constraints, supports SQL joins for reports, bundled in XAMPP, runs on almost any hosting</strong></td><td>Requires running a MySQL server locally (covered in Chapter 2).</td></tr>
+      </table>
+
+      <h3>D. Backend &amp; Notifications: Why PHP 8 + FCM (Notifications Only)?</h3>
       <ul>
-        <li>Can you name the 3 user roles in this application?</li>
-        <li>Why does the backend remain the single source of truth for attendance verification?</li>
+        <li><strong>Plain PHP 8 vs Laravel / Node.js:</strong> Frameworks like Laravel add hundreds of files and magic abstractions. Plain PHP 8 with PSR-4 autoloading and PDO lets beginners see every single step of an HTTP request, SQL query, and JSON response.</li>
+        <li><strong>PHP Sessions + FCM vs Firebase Auth + Firestore:</strong> We use Firebase <em>only</em> for <strong>Firebase Cloud Messaging (FCM)</strong> push delivery, keeping user accounts, passwords, and attendance rules under your full control in PHP + MySQL. (Chapter 11 also explains how Firebase Auth/Firestore could be used as an optional alternative.)</li>
       </ul>
+
+      <h2>Checkpoint</h2>
+      <ol>
+        <li>Why shouldn't the Flutter app connect directly to MySQL?</li>
+        <li>Why do we use Firebase only for push notifications instead of storing all data in Firestore?</li>
+      </ol>
+      <details>
+        <summary>Reveal Checkpoint Answers</summary>
+        <p><strong>1.</strong> Connecting a mobile app directly to MySQL would expose database credentials inside the APK, allowing anyone to decompile the app and delete or steal all data. A PHP REST API enforces authentication, validation, and role rules on the server.</p>
+        <p><strong>2.</strong> Using PHP + MySQL teaches relational modeling (joins, foreign keys, unique constraints) and portable backend hosting, while FCM handles reliable Android push delivery.</p>
+      </details>
     </div>
   </section>
 
-  <!-- CHAPTER 2 -->
+  <!-- ==================== CHAPTER 2 ==================== -->
   <section class="chapter" data-title="2. Prerequisites & Setup" data-time="35 min">
     <div class="card">
       <div class="meta-row">
@@ -201,252 +310,2398 @@
         <span class="badge">Est. 35 min</span>
       </div>
       <h1>Prerequisites &amp; Environment Setup</h1>
-      <p><strong>Learning Objective:</strong> Verify your local Flutter, Android, PHP, MySQL, Composer, and Postman toolchain before writing code.</p>
-      <h2>1. Verify Flutter &amp; Android Toolchain</h2>
+      <p><strong>Learning Objective:</strong> Verify that Flutter, Dart, Android SDK, PHP 8, Composer, MySQL, and Postman are installed and ready.</p>
+
+      <div class="callout"><strong>Previous State:</strong> Empty workspace. <strong>What Will Change:</strong> Verified local development environment.</div>
+
+      <h2>Step 1: Verify Flutter &amp; Android Toolchain</h2>
       <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>flutter --version
-flutter doctor -v</code></pre></div>
-      <div class="callout ok"><strong>Expected Output:</strong> Green checkmarks for Flutter, Android toolchain, and Android Studio / VS Code. Ensure an Android Emulator or USB-debugged Android phone is connected (<code>flutter devices</code>).</div>
-      <h2>2. Verify PHP, Composer &amp; MySQL</h2>
+flutter doctor -v
+flutter devices</code></pre></div>
+      <div class="callout ok"><strong>Expected Output:</strong> <code>Flutter 3.x</code>, green checkmarks for Android toolchain and VS Code/Android Studio, and at least one Android Emulator or USB device listed.</div>
+
+      <h2>Step 2: Verify PHP, Composer &amp; MySQL</h2>
       <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>php -v
 composer --version
 mysql --version</code></pre></div>
-      <div class="callout warn">
-        <strong>Common Errors:</strong>
-        <ul>
-          <li><code>flutter doctor</code> shows Android licenses not accepted &rarr; run <code>flutter doctor --android-licenses</code>.</li>
-          <li><code>mysql</code> not recognized on Windows &rarr; use XAMPP at <code>C:\xampp\mysql\bin\mysql.exe</code> and start MySQL in XAMPP Control Panel.</li>
-        </ul>
-      </div>
+      <p>On Windows with XAMPP, start <strong>Apache</strong> (optional) and <strong>MySQL</strong> from the XAMPP Control Panel. If <code>mysql</code> is not in your system PATH, use <code>C:\xampp\mysql\bin\mysql.exe</code>.</p>
+
+      <h2>Common Errors &amp; Troubleshooting</h2>
+      <ul>
+        <li><strong>"Android license status unknown"</strong> &rarr; Run <code>flutter doctor --android-licenses</code> and type <code>y</code> to accept all licenses.</li>
+        <li><strong>"Can't connect to MySQL server on localhost (10061)"</strong> &rarr; MySQL service is stopped. Open XAMPP Control Panel and click <strong>Start</strong> next to MySQL.</li>
+        <li><strong>"No devices found"</strong> &rarr; Open Android Studio &rarr; Device Manager &rarr; Start an Android Virtual Device (AVD).</li>
+      </ul>
     </div>
   </section>
 
-  <!-- CHAPTER 3 -->
+  <!-- ==================== CHAPTER 3 ==================== -->
   <section class="chapter" data-title="3. Requirement Analysis" data-time="30 min">
     <div class="card">
       <div class="meta-row">
         <span class="badge">Chapter 3</span>
         <span class="badge">Est. 30 min</span>
       </div>
-      <h1>Requirement Analysis (Before Coding)</h1>
-      <p><strong>Learning Objective:</strong> Translate campus needs into clear Functional Requirements, Non-Functional Requirements, and MVP scope.</p>
-      <div class="callout"><strong>Why before coding?</strong> Writing code without requirements causes rework, missing database constraints, and insecure shortcuts. See full details in <code>docs/requirements.md</code>.</div>
-      <h2>User Roles &amp; Core Stories</h2>
+      <h1>Requirement Analysis (Before Writing Code)</h1>
+      <p><strong>Learning Objective:</strong> Define clear functional and non-functional requirements so every feature has measurable acceptance criteria.</p>
+
+      <div class="callout"><strong>Why before coding?</strong> Jumping straight into UI coding without defining roles and security rules leads to broken permissions (e.g., students accidentally able to create events) and missing database constraints.</div>
+
+      <h2>User Roles &amp; Capabilities</h2>
+      <table>
+        <tr><th>Role</th><th>Core Capabilities</th></tr>
+        <tr><td><strong>Student</strong> (<code>student</code>)</td><td>Register, log in, search/filter events, view details, register/cancel registration, view My Events, scan attendance QR, receive notifications, edit profile.</td></tr>
+        <tr><td><strong>Organizer</strong> (<code>organizer</code>)</td><td>Log in, view organizer dashboard, create/edit/cancel own events, view registrants, generate expiring attendance QR, view attendance reports, send event notifications.</td></tr>
+        <tr><td><strong>Admin</strong> (<code>admin</code>)</td><td>Seeded account, view campus-wide statistics, manage users &amp; categories, approve/reject events.</td></tr>
+      </table>
+
+      <h2>Non-Functional Security &amp; Quality Rules</h2>
       <ul>
-        <li><strong>Student:</strong> "As a student, I want to register for an event once and scan an organizer's QR code so my attendance is recorded."</li>
-        <li><strong>Organizer:</strong> "As an organizer, I want to generate a 15-minute expiring QR code so students cannot share static screenshots."</li>
-        <li><strong>Admin:</strong> "As an admin, I want to view campus-wide event and attendance statistics."</li>
-      </ul>
-      <h2>Non-Functional Security Rules</h2>
-      <ul>
-        <li>Hash passwords with <code>password_hash(..., PASSWORD_BCRYPT)</code>.</li>
-        <li>Use PDO prepared statements everywhere to prevent SQL injection.</li>
-        <li>Prevent duplicate registrations and duplicate attendance at both the API and MySQL <code>UNIQUE</code> constraint levels.</li>
+        <li><strong>Password Hashing:</strong> Never store plain-text passwords; use <code>password_hash(..., PASSWORD_BCRYPT)</code>.</li>
+        <li><strong>SQL Injection Prevention:</strong> Always use PDO prepared statements (<code>:param</code> placeholders).</li>
+        <li><strong>Duplicate Prevention:</strong> Database <code>UNIQUE</code> constraints on <code>(event_id, user_id)</code> and <code>(registration_id)</code>.</li>
+        <li><strong>Zero Client Trust:</strong> Never trust a <code>role</code> field sent by the mobile app during public registration, and never verify QR attendance purely on the phone.</li>
       </ul>
     </div>
   </section>
 
-  <!-- CHAPTER 4 -->
-  <section class="chapter" data-title="4. System Design" data-time="40 min">
+  <!-- ==================== CHAPTER 4 ==================== -->
+  <section class="chapter" data-title="4. System Design" data-time="50 min">
     <div class="card">
       <div class="meta-row">
         <span class="badge">Chapter 4</span>
-        <span class="badge">Est. 40 min</span>
+        <span class="badge">Est. 50 min</span>
+        <span class="badge teal">Architecture, ER Modeling &amp; Auth</span>
       </div>
-      <h1>System Architecture, Database &amp; API Design</h1>
-      <p><strong>Learning Objective:</strong> Understand how Flutter (MVVM + Repository), PHP (Router + Middleware + Controllers + Repositories), MySQL, and FCM fit together.</p>
-      <h2>High-Level Architecture</h2>
-      <div class="mermaid">
-flowchart LR
-    UI["Flutter UI (Views)"] --> VM["ViewModels (Provider)"] --> REPO["Repositories"] --> API["PHP 8 REST API"]
-    API --> DB[("MySQL Database")]
-    API --> FCM["FCM HTTP v1"]
-    FCM --> UI
-      </div>
-      <h2>Entity-Relationship Overview</h2>
-      <p>Key tables in <code>campus_event_api/database/database.sql</code>:</p>
+      <h1>System Design, Architecture &amp; Data Flows</h1>
+      <p><strong>Learning Objective:</strong> Understand <em>why</em> we chose MVVM + Repository + Riverpod over other Flutter architectures, how to derive database tables and an ER diagram from plain English requirements, and why we use server-issued opaque Bearer Tokens instead of cookies or stateless JWTs.</p>
+
+      <h2>1. Why MVVM? (And Not MVC, MVP, or Raw Widgets)</h2>
+      <p>Beginners often write <code>http.get(...)</code> directly inside a button's <code>onPressed</code> callback. That works for a 1-screen demo, but in a 10-screen app it creates spaghetti code that is impossible to test or reuse. Here is how common architectures compare in Flutter:</p>
+      <table>
+        <tr><th>Architecture</th><th>How It Works</th><th>Why Chosen / Not Chosen</th></tr>
+        <tr><td><strong>Spaghetti (Logic in Widgets)</strong></td><td><code>http</code> calls &amp; <code>setState</code> inside <code>build()</code> / <code>StatefulWidget</code></td><td>Fast for 1 screen, breaks down immediately when sharing auth or event data across tabs.</td></tr>
+        <tr><td><strong>MVC / MVP</strong></td><td>Controller/Presenter holds a direct reference to the View interface</td><td>Flutter widgets are immutable and rebuilt declaratively, making Presenter&harr;View interfaces awkward.</td></tr>
+        <tr><td><strong>Full Clean Architecture</strong></td><td>Domain UseCases + Entities + DTOs + Mappers</td><td>Great for 50+ developer enterprise teams, but too much boilerplate for an 8–10 hour workshop.</td></tr>
+        <tr><td><strong>MVVM + Repository (Chosen)</strong></td><td><strong>Views</strong> observe <strong>ViewModels</strong> (Riverpod <code>Notifier</code>); ViewModels call <strong>Repositories</strong></td><td><strong>Matches Flutter's reactive UI natively, keeps widgets pure, and is easy to unit-test.</strong></td></tr>
+      </table>
+
+      <h3>Role of the Repository Layer vs. Role of Riverpod</h3>
       <ul>
-        <li><code>users</code> &rarr; <code>events</code> (<code>organizer_id</code>)</li>
-        <li><code>event_categories</code> &rarr; <code>events</code> (<code>category_id</code>)</li>
-        <li><code>events</code> + <code>users</code> &rarr; <code>event_registrations</code> (<code>UNIQUE (event_id, user_id)</code>)</li>
-        <li><code>event_registrations</code> &rarr; <code>attendance</code> (<code>UNIQUE (registration_id)</code>)</li>
-        <li><code>events</code> &rarr; <code>attendance_qr_tokens</code> (SHA-256 hashed, time-limited)</li>
-        <li><code>users</code> &rarr; <code>user_sessions</code> &amp; <code>device_tokens</code></li>
+        <li><strong>Role of the Repository (<code>EventRepository</code>, <code>AuthRepository</code>):</strong> The Repository is the <em>translator and coordinator</em>. Your ViewModel should never care whether data came from a REST API, a local cache, or a mock test file. The Repository calls <code>Service</code> (raw HTTP), converts raw JSON maps into typed Dart models (<code>EventModel</code>), and handles token persistence.</li>
+        <li><strong>Role of Riverpod (<code>flutter_riverpod</code>):</strong> Riverpod is the <em>wiring and state-delivery engine</em>.
+          <ul>
+            <li><code>Provider</code> creates and shares singletons like <code>apiClientProvider</code> and <code>eventRepositoryProvider</code>.</li>
+            <li><code>NotifierProvider</code> holds your ViewModel (<code>EventViewModel</code>) and its immutable state (<code>EventState</code>: <code>isLoading</code>, <code>events</code>, <code>errorMessage</code>).</li>
+            <li><code>ref.watch(...)</code> automatically rebuilds only the widgets listening to that state; <code>ref.read(...notifier)</code> triggers actions like <code>login()</code> or <code>loadEvents()</code>.</li>
+          </ul>
+        </li>
       </ul>
-      <h2>Consistent JSON Response Envelope</h2>
-      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>{
-  "success": true,
-  "message": "Operation completed",
-  "data": {}
-}</code></pre></div>
+
+      <div class="diagram-box">
+        <svg viewBox="0 0 800 175" width="100%" style="max-width:760px" role="img" aria-label="Flutter MVVM Riverpod Architecture">
+          <defs>
+            <marker id="arr2" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+              <polygon points="0 0, 10 3.5, 0 7" fill="#0d9488"/>
+            </marker>
+          </defs>
+          <rect x="15" y="25" width="165" height="115" rx="12" fill="#eff6ff" stroke="#1e3a8a" stroke-width="2"/>
+          <text x="97" y="55" text-anchor="middle" font-weight="700" fill="#1e3a8a" font-size="13">1. Views (UI)</text>
+          <text x="97" y="76" text-anchor="middle" fill="#475569" font-size="11">ConsumerWidget</text>
+          <text x="97" y="94" text-anchor="middle" fill="#475569" font-size="11">ref.watch(provider)</text>
+          <text x="97" y="114" text-anchor="middle" fill="#dc2626" font-size="10">No HTTP calls here!</text>
+
+          <rect x="215" y="25" width="175" height="115" rx="12" fill="#f0fdfa" stroke="#0d9488" stroke-width="2"/>
+          <text x="302" y="55" text-anchor="middle" font-weight="700" fill="#0d9488" font-size="13">2. ViewModels</text>
+          <text x="302" y="76" text-anchor="middle" fill="#475569" font-size="11">Riverpod Notifier</text>
+          <text x="302" y="94" text-anchor="middle" fill="#475569" font-size="11">Immutable State</text>
+          <text x="302" y="114" text-anchor="middle" fill="#475569" font-size="10">isLoading, error, data</text>
+
+          <rect x="425" y="25" width="165" height="115" rx="12" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+          <text x="507" y="55" text-anchor="middle" font-weight="700" fill="#b45309" font-size="13">3. Repositories</text>
+          <text x="507" y="76" text-anchor="middle" fill="#475569" font-size="11">Maps JSON &rarr; Models</text>
+          <text x="507" y="94" text-anchor="middle" fill="#475569" font-size="11">Saves Bearer Token</text>
+          <text x="507" y="114" text-anchor="middle" fill="#475569" font-size="10">Clean Domain API</text>
+
+          <rect x="625" y="25" width="160" height="115" rx="12" fill="#0f172a"/>
+          <text x="705" y="55" text-anchor="middle" font-weight="700" fill="#ffffff" font-size="13">4. Services</text>
+          <text x="705" y="76" text-anchor="middle" fill="#cbd5e1" font-size="11">ApiClient (http)</text>
+          <text x="705" y="94" text-anchor="middle" fill="#cbd5e1" font-size="11">SecureStorage</text>
+          <text x="705" y="114" text-anchor="middle" fill="#cbd5e1" font-size="11">FCM Messaging</text>
+
+          <line x1="180" y1="82" x2="213" y2="82" stroke="#0d9488" stroke-width="2" marker-end="url(#arr2)"/>
+          <line x1="390" y1="82" x2="423" y2="82" stroke="#0d9488" stroke-width="2" marker-end="url(#arr2)"/>
+          <line x1="590" y1="82" x2="623" y2="82" stroke="#0d9488" stroke-width="2" marker-end="url(#arr2)"/>
+        </svg>
+        <div class="diagram-caption">Figure 4.1: Unidirectional dependency flow in Flutter. Each layer only talks to the layer immediately below it.</div>
+      </div>
+
+      <h2>2. How to Find Database Tables &amp; Generate an ER Diagram</h2>
+      <p>Beginners often wonder: <em>"How do engineers know which tables to create?"</em> Follow this 5-step method on any project:</p>
+      <ol>
+        <li><strong>Step 1 &mdash; Underline the Nouns in Requirements:</strong> Read Chapter 1 &amp; 3 and list the core real-world "things": <em>User</em>, <em>Category</em>, <em>Event</em>, <em>Registration</em>, <em>QR Token</em>, <em>Attendance</em>, <em>Device Token</em>, <em>Notification</em>, <em>Session</em>. Each major noun becomes a table!</li>
+        <li><strong>Step 2 &mdash; Assign a Primary Key (PK) &amp; Attributes:</strong> Every table gets an <code>id</code> PK plus its descriptive columns (e.g., <code>events</code> has <code>title</code>, <code>venue</code>, <code>start_time</code>, <code>max_capacity</code>).</li>
+        <li><strong>Step 3 &mdash; Identify Relationships &amp; Resolve Many-to-Many (M:N):</strong>
+          <ul>
+            <li>One <code>user</code> (organizer) can create many <code>events</code> &rarr; <strong>1:N</strong> (add <code>organizer_id</code> FK to <code>events</code>).</li>
+            <li>One <code>user</code> (student) can register for many <code>events</code>, and one <code>event</code> has many students &rarr; <strong>M:N</strong>! Relational databases cannot store a list inside one cell, so we create a <strong>junction table</strong>: <code>event_registrations</code>.</li>
+            <li>One <code>registration</code> can have at most one <code>attendance</code> record &rarr; <strong>1:0..1</strong>.</li>
+          </ul>
+        </li>
+        <li><strong>Step 4 &mdash; Add <code>UNIQUE</code> Constraints for Business Rules:</strong> Adding <code>UNIQUE (event_id, user_id)</code> on <code>event_registrations</code> and <code>UNIQUE (registration_id)</code> on <code>attendance</code> makes duplicate registrations and duplicate attendance physically impossible in MySQL.</li>
+        <li><strong>Step 5 &mdash; Draw the ER Diagram:</strong> Connect PKs to FKs with lines so anyone can read the data model at a glance.</li>
+      </ol>
+
+      <div class="diagram-box">
+        <svg viewBox="0 0 820 330" width="100%" style="max-width:780px" role="img" aria-label="MySQL ER Diagram">
+          <rect x="20" y="20" width="170" height="110" rx="8" fill="#eff6ff" stroke="#1e3a8a" stroke-width="1.5"/>
+          <text x="105" y="42" text-anchor="middle" font-weight="700" fill="#1e3a8a" font-size="13">users</text>
+          <text x="32" y="62" font-size="11" fill="#334155">PK id</text>
+          <text x="32" y="78" font-size="11" fill="#334155">UK email</text>
+          <text x="32" y="94" font-size="11" fill="#334155">password_hash (bcrypt)</text>
+          <text x="32" y="110" font-size="11" fill="#334155">role (student|organizer|admin)</text>
+
+          <rect x="20" y="185" width="170" height="90" rx="8" fill="#f1f5f9" stroke="#475569" stroke-width="1.5"/>
+          <text x="105" y="208" text-anchor="middle" font-weight="700" fill="#0f172a" font-size="13">user_sessions</text>
+          <text x="32" y="228" font-size="11" fill="#334155">PK id, FK user_id</text>
+          <text x="32" y="244" font-size="11" fill="#334155">UK token_hash (SHA-256)</text>
+          <text x="32" y="260" font-size="11" fill="#334155">expires_at, is_revoked</text>
+
+          <rect x="290" y="20" width="195" height="115" rx="8" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+          <text x="387" y="42" text-anchor="middle" font-weight="700" fill="#0d9488" font-size="13">events</text>
+          <text x="302" y="62" font-size="11" fill="#334155">PK id</text>
+          <text x="302" y="78" font-size="11" fill="#334155">FK organizer_id &rarr; users.id</text>
+          <text x="302" y="94" font-size="11" fill="#334155">FK category_id &rarr; categories.id</text>
+          <text x="302" y="110" font-size="11" fill="#334155">title, venue, max_capacity</text>
+          <text x="302" y="126" font-size="11" fill="#334155">start_time, end_time, status</text>
+
+          <rect x="290" y="185" width="195" height="90" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+          <text x="387" y="208" text-anchor="middle" font-weight="700" fill="#b45309" font-size="13">event_registrations</text>
+          <text x="302" y="228" font-size="11" fill="#334155">PK id</text>
+          <text x="302" y="244" font-size="11" fill="#334155">FK event_id, FK user_id</text>
+          <text x="302" y="260" font-size="11" fill="#b45309" font-weight="700">UNIQUE (event_id, user_id)</text>
+
+          <rect x="575" y="20" width="215" height="95" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+          <text x="682" y="42" text-anchor="middle" font-weight="700" fill="#c2410c" font-size="13">attendance_qr_tokens</text>
+          <text x="587" y="62" font-size="11" fill="#334155">PK id, FK event_id</text>
+          <text x="587" y="78" font-size="11" fill="#334155">UK token_hash (SHA-256)</text>
+          <text x="587" y="94" font-size="11" fill="#334155">expires_at, is_revoked</text>
+
+          <rect x="575" y="185" width="215" height="95" rx="8" fill="#ecfdf5" stroke="#10b981" stroke-width="1.5"/>
+          <text x="682" y="208" text-anchor="middle" font-weight="700" fill="#047857" font-size="13">attendance</text>
+          <text x="587" y="228" font-size="11" fill="#334155">PK id, FK event_id, user_id</text>
+          <text x="587" y="244" font-size="11" fill="#047857" font-weight="700">UK FK registration_id</text>
+          <text x="587" y="260" font-size="11" fill="#334155">FK qr_token_id, marked_at</text>
+
+          <line x1="105" y1="130" x2="105" y2="185" stroke="#475569" stroke-width="1.5"/>
+          <line x1="190" y1="75" x2="290" y2="75" stroke="#1e3a8a" stroke-width="1.5"/>
+          <line x1="190" y1="105" x2="290" y2="230" stroke="#d97706" stroke-width="1.5"/>
+          <line x1="387" y1="135" x2="387" y2="185" stroke="#d97706" stroke-width="1.5"/>
+          <line x1="485" y1="70" x2="575" y2="70" stroke="#ea580c" stroke-width="1.5"/>
+          <line x1="485" y1="230" x2="575" y2="230" stroke="#10b981" stroke-width="1.5"/>
+          <line x1="682" y1="115" x2="682" y2="185" stroke="#ea580c" stroke-width="1.5"/>
+        </svg>
+        <div class="diagram-caption">Figure 4.2: Core relational schema (plus <code>event_categories</code>, <code>device_tokens</code>, and <code>notifications</code>).</div>
+      </div>
+
+      <h2>3. Why Bearer Tokens? (And Not Cookies, Basic Auth, or Stateless JWTs)</h2>
+      <p>HTTP is <strong>stateless</strong>: every API request arrives fresh, so the server needs a secure way to know <em>who</em> is calling. Why not other methods?</p>
+      <table>
+        <tr><th>Auth Method</th><th>How It Works</th><th>Why Chosen / Not Chosen</th></tr>
+        <tr><td><strong>HTTP Basic Auth</strong></td><td>Sends <code>email:password</code> on every API call</td><td>Insecure if stored on phone; cannot revoke a single device without changing the user's password.</td></tr>
+        <tr><td><strong>PHP Session Cookies</strong></td><td>Browser stores <code>PHPSESSID</code> cookie automatically</td><td>Great for websites, awkward for native mobile HTTP clients (<code>http</code> package) and cross-domain APIs.</td></tr>
+        <tr><td><strong>Stateless JWT</strong></td><td>Self-contained signed JSON token</td><td>Hard to revoke immediately on logout or account ban without adding a server blocklist anyway; requires extra JWT library.</td></tr>
+        <tr><td><strong>Opaque Bearer Token (Chosen)</strong></td><td>Random 64-hex token; SHA-256 hash stored in <code>user_sessions</code></td><td><strong>Zero external libraries, instant logout/revocation (<code>is_revoked = 1</code>), encrypted on phone via <code>FlutterSecureStorage</code>.</strong></td></tr>
+      </table>
+
+      <div class="diagram-box">
+        <svg viewBox="0 0 800 155" width="100%" style="max-width:760px" role="img" aria-label="Bearer Token Authentication Lifecycle">
+          <defs>
+            <marker id="arrAuth" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+              <polygon points="0 0, 10 3.5, 0 7" fill="#1e3a8a"/>
+            </marker>
+          </defs>
+          <rect x="15" y="25" width="170" height="95" rx="10" fill="#eff6ff" stroke="#1e3a8a" stroke-width="1.5"/>
+          <text x="100" y="52" text-anchor="middle" font-weight="700" fill="#1e3a8a" font-size="12">1. Login Request</text>
+          <text x="100" y="72" text-anchor="middle" fill="#475569" font-size="10">POST /api/auth/login</text>
+          <text x="100" y="90" text-anchor="middle" fill="#475569" font-size="10">{email, password}</text>
+
+          <rect x="220" y="25" width="180" height="95" rx="10" fill="#0f172a"/>
+          <text x="310" y="52" text-anchor="middle" font-weight="700" fill="#ffffff" font-size="12">2. PHP Verifies &amp; Hashes</text>
+          <text x="310" y="72" text-anchor="middle" fill="#cbd5e1" font-size="10">password_verify() passes</text>
+          <text x="310" y="90" text-anchor="middle" fill="#86efac" font-size="10">Saves SHA-256 in user_sessions</text>
+
+          <rect x="435" y="25" width="165" height="95" rx="10" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+          <text x="517" y="52" text-anchor="middle" font-weight="700" fill="#0d9488" font-size="12">3. Secure Storage</text>
+          <text x="517" y="72" text-anchor="middle" fill="#475569" font-size="10">Saves plain token in</text>
+          <text x="517" y="90" text-anchor="middle" fill="#475569" font-size="10">FlutterSecureStorage</text>
+
+          <rect x="635" y="25" width="150" height="95" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+          <text x="710" y="52" text-anchor="middle" font-weight="700" fill="#b45309" font-size="12">4. Protected Calls</text>
+          <text x="710" y="72" text-anchor="middle" fill="#475569" font-size="10">Authorization:</text>
+          <text x="710" y="90" text-anchor="middle" fill="#475569" font-size="10">Bearer &lt;token&gt;</text>
+
+          <line x1="185" y1="72" x2="218" y2="72" stroke="#1e3a8a" stroke-width="2" marker-end="url(#arrAuth)"/>
+          <line x1="400" y1="72" x2="433" y2="72" stroke="#1e3a8a" stroke-width="2" marker-end="url(#arrAuth)"/>
+          <line x1="600" y1="72" x2="633" y2="72" stroke="#1e3a8a" stroke-width="2" marker-end="url(#arrAuth)"/>
+        </svg>
+        <div class="diagram-caption">Figure 4.3: End-to-end Opaque Bearer Token lifecycle.</div>
+      </div>
+
+      <h2>Checkpoint</h2>
+      <ol>
+        <li>Why do we create a junction table <code>event_registrations</code> instead of storing a comma-separated list of event IDs inside <code>users</code>?</li>
+        <li>Why does PHP store <code>hash('sha256', $token)</code> in <code>user_sessions</code> instead of the raw token?</li>
+      </ol>
+      <details>
+        <summary>Reveal Checkpoint Answers</summary>
+        <p><strong>1.</strong> Comma-separated lists violate First Normal Form (1NF): you cannot enforce <code>FOREIGN KEY</code> integrity, prevent duplicates with <code>UNIQUE</code>, or efficiently run <code>COUNT(*)</code> / <code>JOIN</code> queries for attendance reports.</p>
+        <p><strong>2.</strong> If someone ever obtains a read-only copy of the database backup, hashed tokens cannot be used to impersonate logged-in users.</p>
+      </details>
     </div>
   </section>
 
-  <!-- CHAPTER 5 -->
-  <section class="chapter" data-title="5. Agile Planning" data-time="20 min">
+  <!-- ==================== CHAPTER 5 ==================== -->
+  <section class="chapter" data-title="5. Agile Planning" data-time="30 min">
     <div class="card">
       <div class="meta-row">
         <span class="badge">Chapter 5</span>
-        <span class="badge">Est. 20 min</span>
+        <span class="badge">Est. 30 min</span>
+        <span class="badge teal">Agile, Scrum &amp; Sprint Slicing</span>
       </div>
       <h1>Agile Sprints &amp; Definition of Done</h1>
-      <p><strong>Learning Objective:</strong> Build incrementally across Sprints 0–7 instead of writing everything at once.</p>
+      <p><strong>Learning Objective:</strong> Understand what Agile and Scrum are, why Agile beats the traditional Waterfall approach for app development, how to slice a large project into logical Sprints, and what <strong>Definition of Done (DoD)</strong> really means.</p>
+
+      <h2>1. What is Agile &amp; Why Are We Using It?</h2>
+      <p><strong>Agile</strong> is a software development mindset where you build a product in <strong>small, working increments</strong> instead of trying to build the entire application all at once. After each small increment, you test it, verify it works end-to-end, and only then move to the next feature.</p>
+
       <table>
-        <tr><th>Sprint</th><th>Focus</th><th>Deliverable</th></tr>
-        <tr><td>Sprint 0</td><td>Planning &amp; Design</td><td>SRS, Architecture, ER Diagram, API Spec</td></tr>
-        <tr><td>Sprint 1</td><td>Flutter UI Foundation</td><td>Theme, Router, Login/Register, Dashboards</td></tr>
-        <tr><td>Sprint 2</td><td>PHP Backend &amp; MySQL</td><td><code>database.sql</code>, PDO, Auth APIs</td></tr>
-        <tr><td>Sprint 3</td><td>Event Management</td><td>Event CRUD end-to-end</td></tr>
-        <tr><td>Sprint 4</td><td>Event Registration</td><td>Register/Cancel + My Events</td></tr>
-        <tr><td>Sprint 5</td><td>QR Attendance</td><td>QR Generate, Scan, Verify, Reports</td></tr>
-        <tr><td>Sprint 6</td><td>Push Notifications</td><td>FCM device tokens + HTTP v1</td></tr>
-        <tr><td>Sprint 7</td><td>Testing &amp; Deployment</td><td><code>flutter test</code>, Postman, APK/AAB</td></tr>
+        <tr><th>Approach</th><th>How It Works</th><th>Benefits &amp; Drawbacks</th></tr>
+        <tr><td><strong>Waterfall (Sequential)</strong></td><td>Finish 100% of design &rarr; 100% of backend &rarr; 100% of Flutter UI &rarr; test at the very end</td><td>High risk: if an API response format doesn't match what Flutter needs, you discover it too late and rewrite dozens of files.</td></tr>
+        <tr><td><strong>Ad-Hoc ("Just Start Coding")</strong></td><td>No plan, jump between screens and SQL tables randomly</td><td>Leads to broken foreign keys, missing auth checks, and half-finished features.</td></tr>
+        <tr><td><strong>Agile / Scrum (Chosen)</strong></td><td>Break the app into small, time-boxed <strong>Sprints</strong>; each Sprint delivers a tested, working feature</td><td><strong>Early feedback, lower bug risk, clear progress, and a working demo at the end of every stage.</strong></td></tr>
       </table>
+
+      <h2>2. Key Agile &amp; Scrum Terms for Beginners</h2>
+      <ul>
+        <li><strong>Scrum:</strong> A popular, lightweight framework for practicing Agile. It organizes work into fixed-length cycles called Sprints.</li>
+        <li><strong>Product Backlog:</strong> The master, prioritized list of all features the app needs (e.g., Login, Event List, QR Attendance, Push Notifications).</li>
+        <li><strong>User Story:</strong> A backlog item written from the user's perspective: <em>"As a [Student], I want [to scan a QR code], so that [my attendance is recorded]."</em></li>
+        <li><strong>Sprint:</strong> A focused, time-boxed iteration (typically 1–2 weeks in industry, or 45–60 minutes per module in our 8–10 hour workshop) with a clear <strong>Sprint Goal</strong>.</li>
+        <li><strong>Sprint Planning:</strong> Selecting which backlog items fit into the current Sprint and breaking them into concrete coding tasks.</li>
+        <li><strong>Sprint Review:</strong> Running and demonstrating the working feature (e.g., testing an API in Postman or running the Flutter screen) before starting the next Sprint.</li>
+      </ul>
+
+      <div class="diagram-box">
+        <svg viewBox="0 0 800 155" width="100%" style="max-width:760px" role="img" aria-label="Agile Sprint Cycle">
+          <defs>
+            <marker id="arrAgile" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+              <polygon points="0 0, 10 3.5, 0 7" fill="#0d9488"/>
+            </marker>
+          </defs>
+          <rect x="15" y="30" width="160" height="85" rx="10" fill="#eff6ff" stroke="#1e3a8a" stroke-width="1.5"/>
+          <text x="95" y="58" text-anchor="middle" font-weight="700" fill="#1e3a8a" font-size="12">1. Product Backlog</text>
+          <text x="95" y="78" text-anchor="middle" fill="#475569" font-size="10">Prioritized User Stories</text>
+          <text x="95" y="94" text-anchor="middle" fill="#475569" font-size="10">&amp; Acceptance Criteria</text>
+
+          <rect x="215" y="30" width="160" height="85" rx="10" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+          <text x="295" y="58" text-anchor="middle" font-weight="700" fill="#0d9488" font-size="12">2. Sprint Planning</text>
+          <text x="295" y="78" text-anchor="middle" fill="#475569" font-size="10">Pick 1 Sprint Goal</text>
+          <text x="295" y="94" text-anchor="middle" fill="#475569" font-size="10">(e.g. QR Attendance)</text>
+
+          <rect x="415" y="30" width="165" height="85" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+          <text x="497" y="58" text-anchor="middle" font-weight="700" fill="#b45309" font-size="12">3. Build &amp; Verify</text>
+          <text x="497" y="78" text-anchor="middle" fill="#475569" font-size="10">Code PHP + Flutter</text>
+          <text x="497" y="94" text-anchor="middle" fill="#475569" font-size="10">Analyze &amp; Test</text>
+
+          <rect x="620" y="30" width="165" height="85" rx="10" fill="#ecfdf5" stroke="#10b981" stroke-width="1.5"/>
+          <text x="702" y="58" text-anchor="middle" font-weight="700" fill="#047857" font-size="12">4. Sprint Review</text>
+          <text x="702" y="78" text-anchor="middle" fill="#475569" font-size="10">Check Definition of Done</text>
+          <text x="702" y="94" text-anchor="middle" fill="#475569" font-size="10">Demo &rarr; Next Sprint</text>
+
+          <line x1="175" y1="72" x2="213" y2="72" stroke="#0d9488" stroke-width="2" marker-end="url(#arrAgile)"/>
+          <line x1="375" y1="72" x2="413" y2="72" stroke="#0d9488" stroke-width="2" marker-end="url(#arrAgile)"/>
+          <line x1="580" y1="72" x2="618" y2="72" stroke="#0d9488" stroke-width="2" marker-end="url(#arrAgile)"/>
+        </svg>
+        <div class="diagram-caption">Figure 5.1: How each Sprint turns a Backlog item into a verified, demo-ready feature.</div>
+      </div>
+
+      <h2>3. How Do We Divide This Project Into Sprints?</h2>
+      <p>You cannot build features in random order—features have <strong>dependencies</strong>. Use these 4 rules to slice any project into Sprints:</p>
+      <ol>
+        <li><strong>Architecture &amp; Foundation First (Sprints 0–2):</strong> Design the database and API contract (Sprint 0), build the navigable Flutter UI shell (Sprint 1), and stand up the PHP + MySQL authentication API (Sprint 2).</li>
+        <li><strong>Follow Data Dependencies (Sprints 3–5):</strong> Students cannot register for events until events exist (Sprint 3 &rarr; Sprint 4), and cannot mark QR attendance until registrations exist (Sprint 4 &rarr; Sprint 5).</li>
+        <li><strong>Isolate External Services (Sprint 6):</strong> Integrate Firebase Cloud Messaging after the core app already works, so external credentials never block core testing.</li>
+        <li><strong>Harden &amp; Ship (Sprint 7):</strong> Dedicate the final sprint to automated tests, Postman negative cases, and signed release builds.</li>
+      </ol>
+
+      <table>
+        <tr><th>Sprint</th><th>Goal</th><th>Verifiable Deliverable</th></tr>
+        <tr><td>Sprint 0</td><td>Planning &amp; Design</td><td>SRS, Architecture, ER Diagram, API Spec</td></tr>
+        <tr><td>Sprint 1</td><td>Flutter Setup &amp; Theme</td><td>Project created, Riverpod <code>ProviderScope</code>, Material 3 theme, <code>go_router</code></td></tr>
+        <tr><td>Sprint 2</td><td>PHP Backend &amp; MySQL</td><td><code>database.sql</code> imported, PDO, Router, Auth endpoints tested</td></tr>
+        <tr><td>Sprint 3</td><td>Event Management</td><td>List, search, filter, detail, and Organizer Create/Edit</td></tr>
+        <tr><td>Sprint 4</td><td>Event Registration</td><td>Register, Cancel, My Events, duplicate &amp; capacity guards</td></tr>
+        <tr><td>Sprint 5</td><td>QR Attendance</td><td>Expiring QR token generation, scanning, server verification, reports</td></tr>
+        <tr><td>Sprint 6</td><td>Push Notifications</td><td>FCM device token registration + PHP HTTP v1 dispatch</td></tr>
+        <tr><td>Sprint 7</td><td>Testing &amp; Deployment</td><td><code>flutter analyze</code>, <code>flutter test</code>, Postman, APK/AAB build</td></tr>
+      </table>
+
+      <h2>4. What is Definition of Done (DoD)?</h2>
+      <p>In beginner projects, developers often say <em>"I'm done!"</em> right after typing the code—even if it hasn't been tested, crashes on empty input, or breaks architecture rules. A <strong>Definition of Done (DoD)</strong> is a shared quality checklist that <em>every</em> Sprint must pass before it counts as complete:</p>
+      <div class="callout ok">
+        <strong>Our Workshop Definition of Done (DoD):</strong>
+        <ol>
+          <li><strong>Architecture:</strong> Code follows MVVM + Repository + Riverpod (Flutter) and Controller + Repository (PHP).</li>
+          <li><strong>Static Analysis:</strong> <code>flutter analyze</code> and <code>php -l</code> pass with zero errors.</li>
+          <li><strong>Functional Verification:</strong> Both happy paths (200/201) and error cases (401/403/409/422) are verified.</li>
+          <li><strong>Tests:</strong> Unit/widget tests in <code>flutter test</code> pass.</li>
+          <li><strong>Security &amp; Docs:</strong> No hardcoded secrets; documentation matches the implemented code.</li>
+        </ol>
+      </div>
+
+      <h2>5. Enterprise Git Repository Architecture: Monorepo vs. Multi-Repo</h2>
+      <p>In professional software companies, how you organize your GitHub repositories is a strategic decision that affects continuous integration (CI/CD), version synchronization, developer velocity, and cross-team permissions.</p>
+
+      <div class="diagram-box">
+        <svg viewBox="0 0 800 200" width="100%" style="max-width:760px" role="img" aria-label="Monorepo vs Multi-repo Architecture">
+          <!-- Monorepo Box -->
+          <rect x="20" y="20" width="360" height="160" rx="12" fill="#eff6ff" stroke="#1e3a8a" stroke-width="2"/>
+          <text x="200" y="48" text-anchor="middle" font-weight="700" fill="#1e3a8a" font-size="14">Company Monorepo (Chosen)</text>
+          <text x="200" y="70" text-anchor="middle" fill="#475569" font-size="11">Single Git Root: campus-event-management/</text>
+          <rect x="40" y="85" width="95" height="40" rx="6" fill="#fff" stroke="#93c5fd"/>
+          <text x="87" y="110" text-anchor="middle" font-size="10" font-weight="600" fill="#1e3a8a">/frontend</text>
+          <rect x="150" y="85" width="95" height="40" rx="6" fill="#fff" stroke="#93c5fd"/>
+          <text x="197" y="110" text-anchor="middle" font-size="10" font-weight="600" fill="#1e3a8a">/backend</text>
+          <rect x="260" y="85" width="95" height="40" rx="6" fill="#fff" stroke="#93c5fd"/>
+          <text x="307" y="110" text-anchor="middle" font-size="10" font-weight="600" fill="#1e3a8a">/docs &amp; CI</text>
+          <text x="200" y="155" text-anchor="middle" fill="#059669" font-size="11" font-weight="600">&check; Atomic Pull Requests &amp; Zero Version Drift</text>
+
+          <!-- Multi-Repo Box -->
+          <rect x="420" y="20" width="360" height="160" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4"/>
+          <text x="600" y="48" text-anchor="middle" font-weight="700" fill="#475569" font-size="14">Multi-Repo Strategy (Polyrepo)</text>
+          <text x="600" y="70" text-anchor="middle" fill="#64748b" font-size="11">Separate Repositories</text>
+          <rect x="440" y="85" width="95" height="40" rx="6" fill="#fff" stroke="#cbd5e1"/>
+          <text x="487" y="110" text-anchor="middle" font-size="10" fill="#64748b">repo-mobile</text>
+          <rect x="550" y="85" width="95" height="40" rx="6" fill="#fff" stroke="#cbd5e1"/>
+          <text x="597" y="110" text-anchor="middle" font-size="10" fill="#64748b">repo-api</text>
+          <rect x="660" y="85" width="95" height="40" rx="6" fill="#fff" stroke="#cbd5e1"/>
+          <text x="707" y="110" text-anchor="middle" font-size="10" fill="#64748b">repo-docs</text>
+          <text x="600" y="155" text-anchor="middle" fill="#dc2626" font-size="11">&cross; Cross-repo coordination &amp; desync risk</text>
+        </svg>
+        <div class="diagram-caption">Figure 5.2: Monorepo vs Multi-repo architecture for company-grade full-stack products.</div>
+      </div>
+
+      <h3>A. Full Enterprise Repository Directory Layout</h3>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>campus-event-management/                # Enterprise Root Repository (Monorepo)
+|-- .github/                            # Company CI/CD &amp; Issue Automation
+|   |-- workflows/
+|   |   |-- flutter-ci.yml              # Runs flutter analyze, format, and flutter test
+|   |   |-- php-backend-ci.yml          # Runs php -l syntax checks, phpstan, and API tests
+|   |   |-- release-apk.yml             # Automated tag-triggered APK/AAB build pipeline
+|   |-- ISSUE_TEMPLATE/
+|   |   |-- bug_report.md               # Standardized bug reporting form
+|   |   |-- feature_request.md          # User story &amp; acceptance criteria form
+|   |-- pull_request_template.md        # PR checklist enforcing Definition of Done
+|
+|-- campus_event_app/                   # Frontend Workspace (Flutter Android/iOS)
+|   |-- android/                        # Native Android Gradle configuration
+|   |-- ios/                            # Native iOS Xcode project
+|   |-- lib/                            # Dart source code (Core + Features)
+|   |-- test/                           # Unit &amp; widget test suite
+|   |-- integration_test/               # End-to-end device integration flows
+|   |-- pubspec.yaml                    # Flutter dependencies &amp; assets
+|   |-- analysis_options.yaml           # Company linter &amp; strict type rules
+|
+|-- campus_event_api/                   # Backend Workspace (PHP 8 REST API)
+|   |-- app/                            # Controllers, Repositories, Middleware, Services
+|   |-- routes/api.php                  # Central API router
+|   |-- public/index.php                # Web entry point (exclusively exposed)
+|   |-- database/database.sql           # MySQL DDL schema, indexes, and seed records
+|   |-- storage/logs/                   # Server execution error logs
+|   |-- composer.json                   # PHP PSR-4 autoloader &amp; dependencies
+|   |-- .env.example                    # Environment variable contract (no secrets)
+|
+|-- docs/                               # Living Technical Documentation
+|   |-- campus_event_codelab.html       # Interactive Google Codelabs tutorial
+|   |-- requirements.md                 # Software Requirements Specification (SRS)
+|   |-- system_design.md                # System Architecture, Mermaid &amp; SVG specs
+|   |-- database_design.md              # Normalized ER diagram and integrity constraints
+|   |-- api_documentation.md            # REST API endpoint reference and payloads
+|   |-- agile_sprints.md                # Sprint backlog and user stories
+|   |-- testing_guide.md                # Testing matrix and QA scenarios
+|   |-- deployment_guide.md             # Production hosting and APK/AAB signing
+|   |-- ai_prompts.md                   # Reusable AI prompts for code generation
+|
+|-- postman/                            # API Quality Assurance Assets
+|   |-- campus_event_api.postman_collection.json
+|   |-- local_environment.postman_environment.json
+|
+|-- scripts/                            # DevOps &amp; Local Developer Tooling
+|   |-- setup-local-dev.sh              # One-command developer bootstrap script
+|   |-- seed-database.sh                # Reset and seed local MySQL schema
+|
+|-- .gitignore                          # Global git exclusions (.env, build/, secrets)
+|-- LICENSE                             # Open source / enterprise proprietary license
+|-- README.md                           # Single entry point for project onboarding</code></pre></div>
+
+      <h3>B. Why Monorepo? Architectural Justification</h3>
+      <table>
+        <tr><th>Criteria</th><th>Multi-Repo (Polyrepo)</th><th>Unified Monorepo (Chosen)</th><th>Justification for Our Campus Platform</th></tr>
+        <tr>
+          <td><strong>Atomic Changes</strong></td>
+          <td>Requires coordinating 2–3 PRs across separate repos when an API schema changes.</td>
+          <td><strong>1 Pull Request</strong> updates the PHP endpoint, the Flutter Riverpod repository, and the Postman collection simultaneously.</td>
+          <td>Prevents "API updated but mobile app broken" desynchronization.</td>
+        </tr>
+        <tr>
+          <td><strong>API Contract Sync</strong></td>
+          <td>Frontend team might test against stale API docs in another repo.</td>
+          <td>The API specification (<code>docs/api_documentation.md</code>), PHP routes, and Flutter <code>ApiClient</code> live side-by-side.</td>
+          <td>Code reviews catch contract mismatches before code is merged.</td>
+        </tr>
+        <tr>
+          <td><strong>Onboarding &amp; Setup</strong></td>
+          <td>New engineers must find, clone, and configure multiple repositories with mismatched branches.</td>
+          <td><strong>Single <code>git clone</code></strong> provides the complete full-stack environment immediately.</td>
+          <td>Crucial for fast developer onboarding and beginner workshop participants.</td>
+        </tr>
+        <tr>
+          <td><strong>Automated CI/CD</strong></td>
+          <td>Requires complex webhook triggers across repositories.</td>
+          <td>GitHub Actions can run frontend tests, backend tests, and lint checks in parallel on a single commit.</td>
+          <td>Guarantees that no merge breaks either half of the system.</td>
+        </tr>
+      </table>
+
+      <h3>C. Company Git Branching Strategy (GitFlow / GitHub Flow)</h3>
+      <p>In enterprise engineering, developers never commit directly to the <code>main</code> branch. We follow <strong>GitHub Flow</strong> with protected branches:</p>
+      <ul>
+        <li><code>main</code>: Production-ready code. Always deployable. Protected by branch rules requiring at least 1 approved Pull Request review and passing CI.</li>
+        <li><code>develop</code> (optional for staging): Integration branch where completed sprints meet before release tagging.</li>
+        <li><code>feature/&lt;sprint-feature&gt;</code>: Short-lived developer branches (e.g., <code>feature/sprint-5-qr-attendance</code>, <code>feature/auth-riverpod</code>). Created from <code>main</code>, submitted via Pull Request, reviewed, and merged using "Squash and Merge" to keep a clean commit history.</li>
+        <li><code>fix/&lt;bug-name&gt;</code>: Focused patch branches resolving QA or testing failures.</li>
+      </ul>
+
+      <h2>Checkpoint</h2>
+      <ol>
+        <li>Why did we schedule <strong>Event Registration (Sprint 4)</strong> before <strong>QR Attendance (Sprint 5)</strong>?</li>
+        <li>If an engineer changes the JSON response of <code>POST /api/events</code>, why is a Monorepo safer than keeping PHP and Flutter in separate repositories?</li>
+        <li>If a student writes a working login screen that makes raw <code>http.post()</code> calls inside <code>build()</code> and hasn't run <code>flutter analyze</code>, does it meet our Definition of Done?</li>
+      </ol>
+      <details>
+        <summary>Reveal Checkpoint Answers</summary>
+        <p><strong>1.</strong> Because our attendance verification rule requires checking that the student has an active row in <code>event_registrations</code> first—you cannot test attendance without registrations!</p>
+        <p><strong>2.</strong> In a Monorepo, the developer can update the PHP controller, the Flutter <code>EventModel.fromJson</code>, and the test suite in a <strong>single commit / Pull Request</strong>. Continuous Integration verifies both compile together before merging, making broken contracts impossible.</p>
+        <p><strong>3.</strong> No. It violates both our MVVM architecture rule (no HTTP calls inside UI widgets) and our static analysis check.</p>
+      </details>
     </div>
   </section>
 
-  <!-- CHAPTER 6 -->
-  <section class="chapter" data-title="6. Create Flutter Project" data-time="35 min">
+  <!-- ==================== CHAPTER 6 ==================== -->
+  <section class="chapter" data-title="6. Create Flutter Project" data-time="45 min">
     <div class="card">
       <div class="meta-row">
         <span class="badge">Chapter 6</span>
-        <span class="badge">Est. 35 min</span>
+        <span class="badge">Est. 45 min</span>
+        <span class="badge teal">Sprint 1: Project Setup &amp; Structure</span>
       </div>
-      <h1>Sprint 1: Create &amp; Structure the Flutter Project</h1>
-      <p><strong>Learning Objective:</strong> Initialize <code>campus_event_app</code>, install packages, and configure Material 3 theming.</p>
-      <h2>Implementation</h2>
+      <h1>Sprint 1: Create Flutter Project, Folder Structure, Riverpod &amp; Theme</h1>
+      <p><strong>Learning Objective:</strong> Create <code>campus_event_app</code>, generate the complete feature-based MVVM folder structure via CLI commands, install all required packages, and configure Material 3 theming with Riverpod.</p>
+
+      <div class="callout"><strong>Previous State:</strong> Design documents and architecture diagrams are ready. <strong>What Will Change:</strong> We create the runnable Flutter project skeleton with clean folders so we never dump all code into <code>main.dart</code>.</div>
+
+      <h2>Step 1: Create Project &amp; Install Dependencies</h2>
       <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>flutter create --org edu.campus --project-name campus_event_app campus_event_app
 cd campus_event_app
-flutter pub add provider go_router http flutter_secure_storage shared_preferences qr_flutter mobile_scanner firebase_core firebase_messaging intl</code></pre></div>
-      <p>Organize <code>lib/</code> into <code>core/</code> (theme, network, routing, widgets) and <code>features/</code> (<code>auth</code>, <code>events</code>, <code>registrations</code>, <code>attendance</code>, <code>notifications</code>, <code>profile</code>, <code>dashboard</code>).</p>
-      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>// lib/main.dart
-import 'package:flutter/material.dart';
+flutter pub add flutter_riverpod go_router http flutter_secure_storage shared_preferences qr_flutter mobile_scanner firebase_core firebase_messaging intl</code></pre></div>
+
+      <table>
+        <tr><th>Package</th><th>Purpose in Our App</th></tr>
+        <tr><td><code>flutter_riverpod</code></td><td>State management &amp; dependency injection (<code>ProviderScope</code>, <code>NotifierProvider</code>).</td></tr>
+        <tr><td><code>go_router</code></td><td>Declarative URL routing with auth redirect guards.</td></tr>
+        <tr><td><code>http</code></td><td>REST API JSON requests to our PHP 8 backend.</td></tr>
+        <tr><td><code>flutter_secure_storage</code></td><td>Encrypted storage for the server-issued Bearer token.</td></tr>
+        <tr><td><code>shared_preferences</code></td><td>Non-sensitive UI preferences (never for tokens or passwords).</td></tr>
+        <tr><td><code>qr_flutter</code> &amp; <code>mobile_scanner</code></td><td>Generating attendance QR codes (Organizer) &amp; scanning them (Student).</td></tr>
+        <tr><td><code>firebase_core</code> &amp; <code>firebase_messaging</code></td><td>Receiving push notifications via FCM.</td></tr>
+        <tr><td><code>intl</code></td><td>Formatting event dates and times cleanly.</td></tr>
+      </table>
+
+      <h2>Step 2: Complete Folder Structure &amp; Commands</h2>
+      <p>Notice we organize <code>lib/</code> by <strong>core</strong> (shared infrastructure) and <strong>features</strong> (self-contained business modules):</p>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>campus_event_app/
+|-- lib/
+|   |-- main.dart                  # Entry point wrapped in ProviderScope
+|   |-- app.dart                   # MaterialApp.router + AppTheme
+|   |-- core/
+|   |   |-- constants/             # ApiConstants (baseUrl &amp; endpoint paths)
+|   |   |-- errors/                # ApiException (typed HTTP/validation errors)
+|   |   |-- network/               # ApiClient (http + Bearer token header)
+|   |   |-- providers/             # Core Riverpod providers (apiClientProvider)
+|   |   |-- routing/               # GoRouter configuration &amp; auth guards
+|   |   |-- theme/                 # Material 3 colors, inputs, button styles
+|   |   |-- utils/                 # DateFormatter helpers
+|   |   |-- widgets/               # Reusable EventCard, Loading/Empty/Error views
+|   |-- features/
+|       |-- auth/                  # models/, services/, repositories/, viewmodels/, views/
+|       |-- events/                # models/, services/, repositories/, viewmodels/, views/
+|       |-- registrations/         # models/, services/, repositories/, viewmodels/, views/
+|       |-- attendance/            # models/, services/, repositories/, viewmodels/, views/
+|       |-- notifications/         # services/ (FcmNotificationService)
+|       |-- profile/               # views/ (ProfileScreen)
+|       |-- dashboard/             # views/ (HomeShell + Student/Organizer/Admin tabs)
+|-- assets/
+|   |-- images/
+|   |-- icons/
+|-- test/                          # Unit &amp; widget tests</code></pre></div>
+
+      <h3>Generate All Folders in One Command</h3>
+      <p><strong>Windows (PowerShell)</strong> inside <code>campus_event_app/</code>:</p>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>$dirs = @(
+  "lib/core/constants", "lib/core/errors", "lib/core/network", "lib/core/providers",
+  "lib/core/routing", "lib/core/theme", "lib/core/utils", "lib/core/widgets",
+  "lib/features/auth/models", "lib/features/auth/services", "lib/features/auth/repositories", "lib/features/auth/viewmodels", "lib/features/auth/views",
+  "lib/features/events/models", "lib/features/events/services", "lib/features/events/repositories", "lib/features/events/viewmodels", "lib/features/events/views",
+  "lib/features/registrations/models", "lib/features/registrations/services", "lib/features/registrations/repositories", "lib/features/registrations/viewmodels", "lib/features/registrations/views",
+  "lib/features/attendance/models", "lib/features/attendance/services", "lib/features/attendance/repositories", "lib/features/attendance/viewmodels", "lib/features/attendance/views",
+  "lib/features/notifications/services",
+  "lib/features/profile/views",
+  "lib/features/dashboard/views",
+  "assets/images", "assets/icons"
+)
+$dirs | ForEach-Object { New-Item -ItemType Directory -Force -Path $_ | Out-Null }</code></pre></div>
+
+      <p><strong>macOS / Linux (Bash)</strong> inside <code>campus_event_app/</code>:</p>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>mkdir -p lib/core/{constants,errors,network,providers,routing,theme,utils,widgets} \
+  lib/features/{auth,events,registrations,attendance}/{models,services,repositories,viewmodels,views} \
+  lib/features/notifications/services lib/features/profile/views lib/features/dashboard/views \
+  assets/{images,icons}</code></pre></div>
+
+      <h2>Step 3: Configure Material 3 Theme &amp; Core Providers</h2>
+      <span class="file-pill">campus_event_app/lib/core/theme/app_theme.dart</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>import 'package:flutter/material.dart';
+
+class AppTheme {
+  AppTheme._();
+
+  static const Color primaryIndigo = Color(0xFF1E3A8A);
+  static const Color accentTeal = Color(0xFF0D9488);
+  static const Color surfaceBg = Color(0xFFF8FAFC);
+
+  static ThemeData get lightTheme {
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: primaryIndigo,
+      secondary: accentTeal,
+      brightness: Brightness.light,
+      surface: surfaceBg,
+    );
+
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: colorScheme,
+      scaffoldBackgroundColor: surfaceBg,
+      cardTheme: CardThemeData(
+        color: Colors.white,
+        elevation: 1,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Colors.grey.shade200),
+        ),
+        margin: EdgeInsets.zero,
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          minimumSize: const Size.fromHeight(48),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+    );
+  }
+}</code></pre></div>
+
+      <span class="file-pill">campus_event_app/lib/core/providers/core_providers.dart</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/notifications/services/fcm_service.dart';
+import '../network/api_client.dart';
+
+final apiClientProvider = Provider&lt;ApiClient&gt;((ref) =&gt; ApiClient());
+
+final fcmServiceProvider = Provider&lt;FcmNotificationService&gt;((ref) {
+  return FcmNotificationService(ref.watch(apiClientProvider));
+});</code></pre></div>
+
+      <h2>Step 4: Wrap Root App in Riverpod <code>ProviderScope</code></h2>
+      <span class="file-pill">campus_event_app/lib/main.dart</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const CampusEventApp());
+  runApp(
+    const ProviderScope(
+      child: CampusEventApp(),
+    ),
+  );
 }</code></pre></div>
-      <div class="callout"><strong>Git Checkpoint:</strong> <code>git add . &amp;&amp; git commit -m "chore: initialize flutter project and core theme"</code></div>
+
+      <span class="file-pill">campus_event_app/lib/app.dart</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core/routing/app_router.dart';
+import 'core/theme/app_theme.dart';
+
+class CampusEventApp extends ConsumerWidget {
+  const CampusEventApp({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(appRouterProvider);
+    return MaterialApp.router(
+      title: 'Campus Event &amp; Attendance',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.lightTheme,
+      routerConfig: router,
+    );
+  }
+}</code></pre></div>
+
+      <h3>Code Explanation &amp; Hot Reload Demo</h3>
+      <p><code>ProviderScope</code> holds the state of all Riverpod providers in your app. Once you wire <code>appRouterProvider</code> in Chapter 7, run <code>flutter run</code>, edit <code>primaryIndigo</code> in <code>app_theme.dart</code>, and press <code>r</code> in the terminal to watch <strong>Hot Reload</strong> update the theme in under 1 second without losing app state.</p>
+
+      <h2>Checkpoint</h2>
+      <ol>
+        <li>Why do we separate <code>core/</code> from <code>features/</code>?</li>
+        <li>What happens if you forget to wrap <code>CampusEventApp</code> inside <code>ProviderScope</code>?</li>
+      </ol>
+      <details>
+        <summary>Reveal Checkpoint Answers</summary>
+        <p><strong>1.</strong> <code>core/</code> holds app-wide infrastructure (theme, HTTP client, router), while <code>features/</code> keeps each business domain (auth, events, attendance) isolated so teams can work in parallel without merge conflicts.</p>
+        <p><strong>2.</strong> Riverpod throws a runtime <code>StateError</code> ("No ProviderScope found") as soon as any <code>ConsumerWidget</code> calls <code>ref.watch(...)</code>.</p>
+      </details>
+
+      <div class="callout"><strong>Git Checkpoint:</strong> <code>git add . &amp;&amp; git commit -m "chore: setup flutter project, folder structure, riverpod, and material 3 theme"</code></div>
     </div>
   </section>
 
-  <!-- CHAPTER 7 -->
-  <section class="chapter" data-title="7. Build Application UI" data-time="60 min">
+  <!-- ==================== CHAPTER 7 ==================== -->
+  <section class="chapter" data-title="7. Build Application UI" data-time="75 min">
     <div class="card">
       <div class="meta-row">
         <span class="badge">Chapter 7</span>
-        <span class="badge">Est. 60 min</span>
+        <span class="badge">Est. 75 min</span>
+        <span class="badge teal">Material 3 UI &amp; Role-Based Navigation</span>
       </div>
-      <h1>Build the Material 3 Application UI</h1>
-      <p><strong>Learning Objective:</strong> Create clean, reusable UI screens without mixing HTTP calls into widgets.</p>
-      <h2>Key Reusable Widgets</h2>
+      <h1>Build the Application UI &amp; Role-Based Navigation</h1>
+      <p><strong>Learning Objective:</strong> Design consistent Material 3 screens, build reusable UI widgets (<code>EventCard</code>, <code>StateViews</code>), implement form validation in <code>LoginScreen</code> and <code>RegisterScreen</code>, and configure role-adaptive navigation with <code>HomeShell</code> and <code>GoRouter</code>.</p>
+
+      <h2>1. Expected Screen Layouts (Visual Reference)</h2>
+      <div class="diagram-box">
+        <svg viewBox="0 0 820 280" width="100%" style="max-width:790px" role="img" aria-label="Expected Mobile UI Screen Mockups">
+          <!-- Screen 1: Login -->
+          <rect x="15" y="15" width="180" height="250" rx="18" fill="#f8fafc" stroke="#1e3a8a" stroke-width="2"/>
+          <text x="105" y="45" text-anchor="middle" font-weight="700" fill="#1e3a8a" font-size="11">LoginScreen</text>
+          <circle cx="105" cy="78" r="18" fill="#eff6ff" stroke="#1e3a8a"/>
+          <text x="105" y="82" text-anchor="middle" fill="#1e3a8a" font-size="11" font-weight="700">EDU</text>
+          <rect x="30" y="110" width="150" height="28" rx="6" fill="#fff" stroke="#cbd5e1"/>
+          <text x="40" y="128" fill="#64748b" font-size="9">Campus Email</text>
+          <rect x="30" y="146" width="150" height="28" rx="6" fill="#fff" stroke="#cbd5e1"/>
+          <text x="40" y="164" fill="#64748b" font-size="9">Password</text>
+          <rect x="30" y="188" width="150" height="30" rx="8" fill="#1e3a8a"/>
+          <text x="105" y="207" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">Sign In</text>
+          <text x="105" y="238" text-anchor="middle" fill="#1e3a8a" font-size="9">Register Account</text>
+
+          <!-- Screen 2: Student Home -->
+          <rect x="218" y="15" width="180" height="250" rx="18" fill="#f8fafc" stroke="#0d9488" stroke-width="2"/>
+          <rect x="218" y="15" width="180" height="34" rx="10" fill="#ffffff"/>
+          <text x="232" y="36" font-weight="700" fill="#0f172a" font-size="11">Hi, Aarav</text>
+          <rect x="230" y="58" width="156" height="68" rx="10" fill="#1e3a8a"/>
+          <text x="242" y="78" fill="#bfdbfe" font-size="8">Campus Event Pass</text>
+          <text x="242" y="96" fill="#fff" font-size="11" font-weight="700">2 Active Registrations</text>
+          <rect x="242" y="104" width="110" height="16" rx="6" fill="#0d9488"/>
+          <text x="297" y="115" text-anchor="middle" fill="#fff" font-size="8">Scan QR Code</text>
+          <rect x="230" y="138" width="156" height="44" rx="8" fill="#fff" stroke="#e2e8f0"/>
+          <text x="240" y="155" font-weight="700" fill="#0f172a" font-size="9">Flutter Bootcamp</text>
+          <text x="240" y="170" fill="#64748b" font-size="8">Main Auditorium • 45/120</text>
+          <rect x="230" y="190" width="156" height="40" rx="8" fill="#fff" stroke="#e2e8f0"/>
+          <text x="240" y="207" font-weight="700" fill="#0f172a" font-size="9">Campus Hackathon</text>
+          <rect x="218" y="236" width="180" height="29" rx="8" fill="#ffffff" stroke="#e2e8f0"/>
+          <text x="308" y="254" text-anchor="middle" fill="#475569" font-size="8">Home | Explore | My Events | Profile</text>
+
+          <!-- Screen 3: Event Detail -->
+          <rect x="421" y="15" width="180" height="250" rx="18" fill="#f8fafc" stroke="#1e3a8a" stroke-width="2"/>
+          <text x="511" y="38" text-anchor="middle" font-weight="700" fill="#0f172a" font-size="11">Event Details</text>
+          <rect x="435" y="50" width="60" height="16" rx="8" fill="#eff6ff"/>
+          <text x="465" y="61" text-anchor="middle" fill="#1e3a8a" font-size="8">Workshop</text>
+          <text x="435" y="84" font-weight="700" fill="#0f172a" font-size="11">Flutter Bootcamp</text>
+          <rect x="435" y="96" width="152" height="82" rx="10" fill="#fff" stroke="#e2e8f0"/>
+          <text x="445" y="114" fill="#334155" font-size="8">Starts: Sat, 10:00 AM</text>
+          <text x="445" y="132" fill="#334155" font-size="8">Venue: Main Auditorium</text>
+          <text x="445" y="150" fill="#334155" font-size="8">Capacity: 45 / 120</text>
+          <text x="445" y="168" fill="#334155" font-size="8">Organizer: Prof. Verma</text>
+          <rect x="435" y="196" width="152" height="30" rx="8" fill="#1e3a8a"/>
+          <text x="511" y="215" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">Register Now</text>
+
+          <!-- Screen 4: Organizer Dashboard -->
+          <rect x="624" y="15" width="180" height="250" rx="18" fill="#f8fafc" stroke="#d97706" stroke-width="2"/>
+          <text x="714" y="38" text-anchor="middle" font-weight="700" fill="#0f172a" font-size="11">Organizer Dashboard</text>
+          <rect x="636" y="54" width="74" height="54" rx="10" fill="#fff" stroke="#e2e8f0"/>
+          <text x="673" y="80" text-anchor="middle" font-weight="700" fill="#1e3a8a" font-size="14">3</text>
+          <text x="673" y="96" text-anchor="middle" fill="#64748b" font-size="8">My Events</text>
+          <rect x="718" y="54" width="74" height="54" rx="10" fill="#fff" stroke="#e2e8f0"/>
+          <text x="755" y="80" text-anchor="middle" font-weight="700" fill="#0d9488" font-size="14">142</text>
+          <text x="755" y="96" text-anchor="middle" fill="#64748b" font-size="8">Registrations</text>
+          <rect x="636" y="122" width="156" height="56" rx="10" fill="#fff" stroke="#e2e8f0"/>
+          <text x="646" y="142" font-weight="700" fill="#0f172a" font-size="9">Flutter Bootcamp</text>
+          <text x="646" y="158" fill="#0d9488" font-size="8">Tap for QR &amp; Report</text>
+          <rect x="705" y="195" width="86" height="28" rx="14" fill="#1e3a8a"/>
+          <text x="748" y="213" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">+ Create</text>
+          <rect x="624" y="236" width="180" height="29" rx="8" fill="#ffffff" stroke="#e2e8f0"/>
+          <text x="714" y="254" text-anchor="middle" fill="#475569" font-size="8">Dashboard | Manage | Explore | Profile</text>
+        </svg>
+        <div class="diagram-caption">Figure 7.1: Visual blueprint of our 4 primary mobile screens using Material 3 Indigo (#1E3A8A) and Teal (#0D9488).</div>
+      </div>
+
+      <h2>2. Standardized AI Prompt to Generate Identical UI Mockups / Screens</h2>
+      <p>Want to preview or generate consistent UI screens in <strong>ChatGPT, Claude, or Gemini</strong>? Paste this exact design-system prompt so every tool produces matching layouts:</p>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>Design a Material 3 light-theme Android mobile UI for a "Campus Event &amp; Attendance Management System".
+Use these exact design tokens:
+- Primary color: Deep Indigo #1E3A8A, Secondary accent: Teal #0D9488, Scaffold background: #F8FAFC, Card background: #FFFFFF with 1px #E2E8F0 border and 16dp border radius.
+- Filled buttons: 48dp height, 12dp radius. Text fields: outlined, white fill, 12dp radius.
+Generate clean, high-contrast mobile screens (390x844px) for:
+1. LoginScreen: Centered school icon, "Campus Events" title, email &amp; password fields, full-width "Sign In" FilledButton, "Register" TextButton.
+2. StudentHomeTab: AppBar "Hi, Aarav" + QR scanner icon, Indigo hero card "Campus Event Pass" with "2 Active Registrations" &amp; "Scan Event Attendance QR" button, "Upcoming Events" list of EventCards, 4-tab NavigationBar (Home, Explore, My Events, Profile).
+3. EventDetailScreen: Category chip, bold title, rounded info card (Starts, Ends, Venue, Capacity, Organizer), "About this event" description, bottom "Register Now" FilledButton.
+4. OrganizerDashboardTab: 2-column metric cards ("My Events", "Registrations"), event list, floating "+ Create Event" button, 4-tab NavigationBar (Dashboard, Manage, Explore, Profile).</code></pre></div>
+
+      <h2>3. Screen Navigation Flow</h2>
+      <div class="diagram-box">
+        <svg viewBox="0 0 800 190" width="100%" style="max-width:760px" role="img" aria-label="Screen Navigation Flow">
+          <defs>
+            <marker id="arr3" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+              <polygon points="0 0, 10 3.5, 0 7" fill="#1e3a8a"/>
+            </marker>
+          </defs>
+          <rect x="20" y="65" width="130" height="55" rx="10" fill="#eff6ff" stroke="#1e3a8a" stroke-width="2"/>
+          <text x="85" y="90" text-anchor="middle" font-weight="700" fill="#1e3a8a" font-size="13">LoginScreen</text>
+          <text x="85" y="108" text-anchor="middle" fill="#475569" font-size="10">/login &harr; /register</text>
+
+          <rect x="205" y="55" width="160" height="75" rx="10" fill="#1e3a8a"/>
+          <text x="285" y="85" text-anchor="middle" font-weight="700" fill="#ffffff" font-size="13">HomeShell (/home)</text>
+          <text x="285" y="103" text-anchor="middle" fill="#bfdbfe" font-size="10">Adapts Bottom Bar</text>
+          <text x="285" y="117" text-anchor="middle" fill="#bfdbfe" font-size="10">by User Role</text>
+
+          <rect x="425" y="15" width="160" height="45" rx="8" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+          <text x="505" y="42" text-anchor="middle" font-weight="600" fill="#0d9488" font-size="12">Student Tabs (4)</text>
+
+          <rect x="425" y="72" width="160" height="45" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+          <text x="505" y="99" text-anchor="middle" font-weight="600" fill="#b45309" font-size="12">Organizer Tabs (4)</text>
+
+          <rect x="425" y="130" width="160" height="45" rx="8" fill="#f1f5f9" stroke="#475569" stroke-width="1.5"/>
+          <text x="505" y="157" text-anchor="middle" font-weight="600" fill="#0f172a" font-size="12">Admin Tabs (3)</text>
+
+          <rect x="635" y="45" width="145" height="95" rx="10" fill="#ffffff" stroke="#1e3a8a" stroke-width="1.5"/>
+          <text x="707" y="70" text-anchor="middle" font-weight="700" fill="#1e3a8a" font-size="12">Detail &amp; QR</text>
+          <text x="707" y="88" text-anchor="middle" fill="#475569" font-size="10">/events/:id</text>
+          <text x="707" y="104" text-anchor="middle" fill="#475569" font-size="10">/attendance/scan</text>
+          <text x="707" y="120" text-anchor="middle" fill="#475569" font-size="10">/attendance/qr/:id</text>
+
+          <line x1="150" y1="92" x2="203" y2="92" stroke="#1e3a8a" stroke-width="2" marker-end="url(#arr3)"/>
+          <line x1="365" y1="80" x2="423" y2="38" stroke="#1e3a8a" stroke-width="1.5" marker-end="url(#arr3)"/>
+          <line x1="365" y1="92" x2="423" y2="94" stroke="#1e3a8a" stroke-width="1.5" marker-end="url(#arr3)"/>
+          <line x1="365" y1="108" x2="423" y2="150" stroke="#1e3a8a" stroke-width="1.5" marker-end="url(#arr3)"/>
+          <line x1="585" y1="92" x2="633" y2="92" stroke="#1e3a8a" stroke-width="2" marker-end="url(#arr3)"/>
+        </svg>
+      </div>
+
+      <h2>4. Full Source Code &amp; Explanations</h2>
+
+      <h3>A. Reusable State Views (Loading, Empty, Error)</h3>
+      <span class="file-pill">campus_event_app/lib/core/widgets/state_views.dart</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>import 'package:flutter/material.dart';
+
+class LoadingStateView extends StatelessWidget {
+  const LoadingStateView({super.key, this.message = 'Loading...'});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const CircularProgressIndicator(),
+          const SizedBox(height: 12),
+          Text(message, style: Theme.of(context).textTheme.bodyMedium),
+        ],
+      ),
+    );
+  }
+}
+
+class EmptyStateView extends StatelessWidget {
+  const EmptyStateView({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 56, color: Colors.grey.shade400),
+            const SizedBox(height: 12),
+            Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700), textAlign: TextAlign.center),
+            const SizedBox(height: 6),
+            Text(subtitle, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600), textAlign: TextAlign.center),
+            if (actionLabel != null &amp;&amp; onAction != null) ...[
+              const SizedBox(height: 16),
+              OutlinedButton(onPressed: onAction, child: Text(actionLabel!)),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class ErrorStateView extends StatelessWidget {
+  const ErrorStateView({super.key, required this.message, required this.onRetry});
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.error_outline, size: 52, color: Theme.of(context).colorScheme.error),
+            const SizedBox(height: 12),
+            Text(message, style: Theme.of(context).textTheme.bodyLarge, textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            FilledButton.icon(onPressed: onRetry, icon: const Icon(Icons.refresh), label: const Text('Try Again')),
+          ],
+        ),
+      ),
+    );
+  }
+}</code></pre></div>
+
+      <h3>B. Complete <code>LoginScreen</code> (Riverpod <code>ConsumerStatefulWidget</code>)</h3>
+      <span class="file-pill">campus_event_app/lib/features/auth/views/login_screen.dart</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../viewmodels/auth_viewmodel.dart';
+
+class LoginScreen extends ConsumerStatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  ConsumerState&lt;LoginScreen&gt; createState() =&gt; _LoginScreenState();
+}
+
+class _LoginScreenState extends ConsumerState&lt;LoginScreen&gt; {
+  final _formKey = GlobalKey&lt;FormState&gt;();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future&lt;void&gt; _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final success = await ref.read(authViewModelProvider.notifier).login(
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
+
+    if (!mounted) return;
+    if (success) {
+      context.go('/home');
+    } else {
+      final err = ref.read(authViewModelProvider).errorMessage;
+      if (err != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(err),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isLoading = ref.watch(authViewModelProvider).isLoading;
+
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Icon(Icons.school_rounded, size: 64, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(height: 16),
+                    Text('Campus Events', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800), textAlign: TextAlign.center),
+                    const SizedBox(height: 6),
+                    Text('Sign in to explore events &amp; mark QR attendance', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600), textAlign: TextAlign.center),
+                    const SizedBox(height: 32),
+                    TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(labelText: 'Campus Email', prefixIcon: Icon(Icons.email_outlined)),
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return 'Email is required';
+                        if (!v.contains('@')) return 'Enter a valid email';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          tooltip: 'Toggle password visibility',
+                          icon: Icon(_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                          onPressed: () =&gt; setState(() =&gt; _obscurePassword = !_obscurePassword),
+                        ),
+                      ),
+                      validator: (v) =&gt; (v == null || v.isEmpty) ? 'Password is required' : null,
+                    ),
+                    const SizedBox(height: 24),
+                    FilledButton(
+                      onPressed: isLoading ? null : _submit,
+                      child: isLoading
+                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Text('Sign In'),
+                    ),
+                    const SizedBox(height: 12),
+                    TextButton(
+                      onPressed: isLoading ? null : () =&gt; context.push('/register'),
+                      child: const Text("Don't have an account? Register"),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}</code></pre></div>
+
+      <h3>C. Role-Adaptive Navigation Shell (<code>HomeShell</code>) &amp; <code>GoRouter</code></h3>
+      <span class="file-pill">campus_event_app/lib/features/dashboard/views/home_shell.dart</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../core/providers/core_providers.dart';
+import '../../auth/viewmodels/auth_viewmodel.dart';
+import '../../events/views/event_list_screen.dart';
+import '../../profile/views/profile_screen.dart';
+import '../../registrations/views/my_registrations_screen.dart';
+import 'admin_dashboard_tab.dart';
+import 'organizer_dashboard_tab.dart';
+import 'student_home_tab.dart';
+
+class HomeShell extends ConsumerStatefulWidget {
+  const HomeShell({super.key});
+
+  @override
+  ConsumerState&lt;HomeShell&gt; createState() =&gt; _HomeShellState();
+}
+
+class _HomeShellState extends ConsumerState&lt;HomeShell&gt; {
+  int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      if (!mounted) return;
+      ref.read(fcmServiceProvider).initialize(
+        onForegroundMessage: (title, body) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$title: $body')));
+        },
+        onNotificationTap: (eventId) {
+          if (mounted &amp;&amp; eventId != null) context.push('/events/$eventId');
+        },
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final user = ref.watch(authViewModelProvider).currentUser;
+    if (user == null) return const SizedBox.shrink();
+
+    late final List&lt;Widget&gt; pages;
+    late final List&lt;NavigationDestination&gt; destinations;
+
+    if (user.isOrganizer) {
+      pages = const [OrganizerDashboardTab(), EventListScreen(mineOnly: true), EventListScreen(), ProfileScreen()];
+      destinations = const [
+        NavigationDestination(icon: Icon(Icons.dashboard_outlined), label: 'Dashboard'),
+        NavigationDestination(icon: Icon(Icons.edit_calendar_outlined), label: 'Manage'),
+        NavigationDestination(icon: Icon(Icons.explore_outlined), label: 'Explore'),
+        NavigationDestination(icon: Icon(Icons.person_outline), label: 'Profile'),
+      ];
+    } else if (user.isAdmin) {
+      pages = const [AdminDashboardTab(), EventListScreen(), ProfileScreen()];
+      destinations = const [
+        NavigationDestination(icon: Icon(Icons.admin_panel_settings_outlined), label: 'Admin'),
+        NavigationDestination(icon: Icon(Icons.event_outlined), label: 'Events'),
+        NavigationDestination(icon: Icon(Icons.person_outline), label: 'Profile'),
+      ];
+    } else {
+      pages = [
+        StudentHomeTab(onSwitchTab: (i) =&gt; setState(() =&gt; _selectedIndex = i)),
+        const EventListScreen(),
+        const MyRegistrationsScreen(),
+        const ProfileScreen(),
+      ];
+      destinations = const [
+        NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
+        NavigationDestination(icon: Icon(Icons.explore_outlined), label: 'Explore'),
+        NavigationDestination(icon: Icon(Icons.confirmation_number_outlined), label: 'My Events'),
+        NavigationDestination(icon: Icon(Icons.person_outline), label: 'Profile'),
+      ];
+    }
+
+    final safeIndex = _selectedIndex &gt;= pages.length ? 0 : _selectedIndex;
+    return Scaffold(
+      body: IndexedStack(index: safeIndex, children: pages),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: safeIndex,
+        onDestinationSelected: (index) =&gt; setState(() =&gt; _selectedIndex = index),
+        destinations: destinations,
+      ),
+    );
+  }
+}</code></pre></div>
+
+      <h3>Code Explanation</h3>
       <ul>
-        <li><code>lib/core/widgets/state_views.dart</code>: <code>LoadingStateView</code>, <code>EmptyStateView</code>, <code>ErrorStateView</code>.</li>
-        <li><code>lib/core/widgets/event_card.dart</code>: Displays category badge, seat count, title, date, and venue.</li>
+        <li><strong><code>ConsumerStatefulWidget</code> &amp; <code>dispose()</code>:</strong> Gives us both local UI controllers (<code>_emailController</code>, <code>_passwordController</code>) and Riverpod's <code>ref</code>. Always call <code>controller.dispose()</code> to prevent memory leaks.</li>
+        <li><strong><code>if (!mounted) return;</code>:</strong> After any <code>await</code>, the user might have navigated away. Checking <code>mounted</code> prevents crashes when calling <code>context.go()</code> or <code>ScaffoldMessenger</code>.</li>
+        <li><strong><code>IndexedStack</code> in <code>HomeShell</code>:</strong> Keeps all bottom-navigation tabs alive in memory so switching from <em>Explore</em> to <em>Profile</em> and back preserves your scroll position.</li>
       </ul>
-      <h2>Role-Based Navigation Shell</h2>
-      <p>In <code>lib/features/dashboard/views/home_shell.dart</code>, the bottom <code>NavigationBar</code> adapts to the logged-in user's role:</p>
-      <ul>
-        <li><strong>Student:</strong> Home, Explore, My Events, Profile</li>
-        <li><strong>Organizer:</strong> Dashboard, Manage, Explore, Profile</li>
-        <li><strong>Admin:</strong> Admin, Events, Profile</li>
-      </ul>
-      <div class="callout"><strong>AI Coding Prompt:</strong> "Inspect <code>campus_event_app/lib/core/widgets/event_card.dart</code> and create a reusable Material 3 card widget for registration items without embedding HTTP calls."</div>
+
+      <h2>Checkpoint</h2>
+      <ol>
+        <li>Why do we use <code>ref.watch(authViewModelProvider)</code> inside <code>build()</code>, but <code>ref.read(authViewModelProvider.notifier)</code> inside <code>_submit()</code>?</li>
+        <li>Why do we check <code>if (!mounted) return;</code> after <code>await</code>?</li>
+      </ol>
+      <details>
+        <summary>Reveal Checkpoint Answers</summary>
+        <p><strong>1.</strong> <code>ref.watch</code> subscribes the widget to rebuild whenever state changes (like <code>isLoading</code> toggling); <code>ref.read</code> is for one-off button callbacks so we don't register an unnecessary listener.</p>
+        <p><strong>2.</strong> Because an async network call can finish after the user closed the screen; using <code>context</code> on an unmounted widget throws a Flutter runtime error.</p>
+      </details>
+
+      <div class="callout"><strong>Git Checkpoint:</strong> <code>git add . &amp;&amp; git commit -m "feat: implement login, reusable widgets, and role-based home shell"</code></div>
     </div>
   </section>
 
-  <!-- CHAPTER 8 -->
-  <section class="chapter" data-title="8. Build PHP Backend" data-time="60 min">
+  <!-- ==================== CHAPTER 8 ==================== -->
+  <section class="chapter" data-title="8. Build PHP Backend" data-time="80 min">
     <div class="card">
       <div class="meta-row">
         <span class="badge">Chapter 8</span>
-        <span class="badge">Est. 60 min</span>
+        <span class="badge">Est. 80 min</span>
+        <span class="badge teal">Sprint 2: PHP 8 REST API &amp; MySQL</span>
       </div>
       <h1>Sprint 2: Build the PHP 8 REST API &amp; MySQL Database</h1>
-      <p><strong>Learning Objective:</strong> Import <code>database.sql</code>, configure PDO, and run the lightweight PHP router.</p>
-      <h2>1. Import Schema &amp; Start Server</h2>
+      <p><strong>Learning Objective:</strong> Build a clean, secure, framework-free PHP 8 REST API from scratch. You will understand directory isolation (exposing only <code>public/</code>), environment parsing, PDO database connection, consistent JSON responses, regular expression routing, role-based authorization middleware, and complete Controller + Repository implementations.</p>
+
+      <h2>1. Backend Architecture &amp; Request Lifecycle</h2>
+      <div class="diagram-box">
+        <svg viewBox="0 0 820 180" width="100%" style="max-width:780px" role="img" aria-label="PHP REST API Request Lifecycle">
+          <defs>
+            <marker id="arrPhp" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+              <polygon points="0 0, 10 3.5, 0 7" fill="#1e3a8a"/>
+            </marker>
+          </defs>
+          <rect x="15" y="45" width="135" height="85" rx="10" fill="#eff6ff" stroke="#1e3a8a" stroke-width="1.5"/>
+          <text x="82" y="75" text-anchor="middle" font-weight="700" fill="#1e3a8a" font-size="12">1. HTTP Request</text>
+          <text x="82" y="95" text-anchor="middle" fill="#475569" font-size="10">GET /api/events</text>
+          <text x="82" y="112" text-anchor="middle" fill="#475569" font-size="10">Bearer &lt;token&gt;</text>
+
+          <rect x="175" y="45" width="135" height="85" rx="10" fill="#0f172a"/>
+          <text x="242" y="75" text-anchor="middle" font-weight="700" fill="#ffffff" font-size="12">2. public/index.php</text>
+          <text x="242" y="95" text-anchor="middle" fill="#94a3b8" font-size="10">CORS headers</text>
+          <text x="242" y="112" text-anchor="middle" fill="#94a3b8" font-size="10">Env::load() &amp; Router</text>
+
+          <rect x="335" y="45" width="145" height="85" rx="10" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+          <text x="407" y="75" text-anchor="middle" font-weight="700" fill="#0d9488" font-size="12">3. AuthMiddleware</text>
+          <text x="407" y="95" text-anchor="middle" fill="#475569" font-size="10">Validates SHA-256</text>
+          <text x="407" y="112" text-anchor="middle" fill="#475569" font-size="10">Checks user role</text>
+
+          <rect x="505" y="45" width="145" height="85" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+          <text x="577" y="75" text-anchor="middle" font-weight="700" fill="#b45309" font-size="12">4. Controller</text>
+          <text x="577" y="95" text-anchor="middle" fill="#475569" font-size="10">Validator checks</text>
+          <text x="577" y="112" text-anchor="middle" fill="#475569" font-size="10">Business rules</text>
+
+          <rect x="675" y="45" width="130" height="85" rx="10" fill="#ecfdf5" stroke="#10b981" stroke-width="1.5"/>
+          <text x="740" y="75" text-anchor="middle" font-weight="700" fill="#047857" font-size="12">5. Repository</text>
+          <text x="740" y="95" text-anchor="middle" fill="#475569" font-size="10">PDO prepared SQL</text>
+          <text x="740" y="112" text-anchor="middle" fill="#475569" font-size="10">MySQL 8 database</text>
+
+          <line x1="150" y1="87" x2="173" y2="87" stroke="#1e3a8a" stroke-width="2" marker-end="url(#arrPhp)"/>
+          <line x1="310" y1="87" x2="333" y2="87" stroke="#1e3a8a" stroke-width="2" marker-end="url(#arrPhp)"/>
+          <line x1="480" y1="87" x2="503" y2="87" stroke="#1e3a8a" stroke-width="2" marker-end="url(#arrPhp)"/>
+          <line x1="650" y1="87" x2="673" y2="87" stroke="#1e3a8a" stroke-width="2" marker-end="url(#arrPhp)"/>
+        </svg>
+        <div class="diagram-caption">Figure 8.1: Every request passes through a single public entry point, middleware gate, controller, and PDO repository.</div>
+      </div>
+
+      <h2>2. Complete Backend Folder &amp; File Structure</h2>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>campus_event_api/
+|-- public/
+|   |-- index.php                  # Web server entry point (ONLY folder exposed to web)
+|-- app/
+|   |-- Config/
+|   |   |-- Env.php                # Simple .env file loader &amp; getter
+|   |   |-- Database.php           # PDO MySQL connection singleton
+|   |-- Helpers/
+|   |   |-- Response.php           # Unified JSON response helper (Response::ok / error)
+|   |   |-- Router.php             # Lightweight regex HTTP router with middleware
+|   |   |-- Validator.php          # Field validation helpers
+|   |-- Middleware/
+|   |   |-- AuthMiddleware.php     # Bearer token extractor &amp; role authorization
+|   |-- Controllers/
+|   |   |-- AuthController.php     # Register, Login, Logout
+|   |   |-- EventController.php    # List, Show, Store, Update, Destroy, Categories
+|   |   |-- RegistrationController.php # Register, Cancel, My Registrations
+|   |   |-- AttendanceController.php   # Generate QR, Verify QR, Attendance Reports
+|   |   |-- NotificationController.php # Save FCM token &amp; Send push
+|   |   |-- ProfileController.php  # Show &amp; Update User Profile
+|   |   |-- AdminController.php    # Campus Stats, User management, Category CRUD
+|   |-- Repositories/
+|   |   |-- UserRepository.php     # User CRUD &amp; Session token management
+|   |   |-- EventRepository.php    # Event CRUD, Category queries
+|   |   |-- RegistrationRepository.php # Registrations &amp; capacity counting
+|   |   |-- AttendanceRepository.php   # QR token hashing &amp; attendance recording
+|   |   |-- NotificationRepository.php # Device token upsert &amp; audit logging
+|   |-- Services/
+|       |-- FcmService.php         # Pure-PHP FCM HTTP v1 OAuth2 JWT sender
+|-- routes/
+|   |-- api.php                    # Route definitions and middleware binding
+|-- database/
+|   |-- database.sql               # 9 MySQL tables, constraints &amp; seed data
+|-- storage/
+|   |-- logs/                      # app.log for uncaught exception traces
+|-- .env.example                   # Template environment variables
+|-- composer.json                  # PSR-4 autoloader configuration
+|-- README.md                      # Backend setup and run instructions</code></pre></div>
+
+      <h3>Commands to Generate Backend Folders</h3>
+      <p><strong>Windows (PowerShell)</strong> inside <code>campus_event_api/</code>:</p>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>$dirs = @(
+  "public", "routes", "database", "storage/logs",
+  "app/Config", "app/Helpers", "app/Middleware", "app/Controllers", "app/Repositories", "app/Services"
+)
+$dirs | ForEach-Object { New-Item -ItemType Directory -Force -Path $_ | Out-Null }</code></pre></div>
+
+      <p><strong>macOS / Linux (Bash)</strong> inside <code>campus_event_api/</code>:</p>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>mkdir -p public routes database storage/logs app/{Config,Helpers,Middleware,Controllers,Repositories,Services}</code></pre></div>
+
+      <h2>3. Complete Source Code &amp; Deep-Dive Explanations</h2>
+
+      <h3>A. Composer Configuration (PSR-4 Autoloading)</h3>
+      <span class="file-pill">campus_event_api/composer.json</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>{
+  "name": "campus/event-api",
+  "description": "Campus Event &amp; Attendance Management System REST API in PHP 8",
+  "type": "project",
+  "require": {
+    "php": "&gt;=8.1",
+    "ext-pdo": "*",
+    "ext-json": "*",
+    "ext-openssl": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "app/"
+    }
+  }
+}</code></pre></div>
+      <p><strong>Explanation:</strong> This tells Composer that any class starting with <code>App\</code> maps directly to the <code>app/</code> folder. Run <code>composer dump-autoload</code> once to generate <code>vendor/autoload.php</code>.</p>
+
+      <h3>B. Environment &amp; PDO Database Connection</h3>
+      <span class="file-pill">campus_event_api/app/Config/Env.php</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>&lt;?php
+
+declare(strict_types=1);
+
+namespace App\Config;
+
+final class Env
+{
+    private static array $values = [];
+
+    public static function load(string $path): void
+    {
+        if (!is_file($path)) return;
+        $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        if ($lines === false) return;
+
+        foreach ($lines as $line) {
+            $trimmed = trim($line);
+            if ($trimmed === '' || str_starts_with($trimmed, '#')) continue;
+            $parts = explode('=', $trimmed, 2);
+            if (count($parts) === 2) {
+                $key = trim($parts[0]);
+                $val = trim($parts[1], " \t\n\r\0\x0B\"'");
+                self::$values[$key] = $val;
+                if (getenv($key) === false) putenv("$key=$val");
+            }
+        }
+    }
+
+    public static function get(string $key, ?string $default = null): ?string
+    {
+        if (array_key_exists($key, self::$values)) return self::$values[$key];
+        $envVal = getenv($key);
+        return $envVal !== false ? (string) $envVal : $default;
+    }
+}</code></pre></div>
+
+      <span class="file-pill">campus_event_api/app/Config/Database.php</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>&lt;?php
+
+declare(strict_types=1);
+
+namespace App\Config;
+
+use PDO;
+use PDOException;
+
+final class Database
+{
+    private static ?PDO $connection = null;
+
+    public static function getConnection(): PDO
+    {
+        if (self::$connection !== null) {
+            return self::$connection;
+        }
+
+        $host = Env::get('DB_HOST', '127.0.0.1');
+        $port = Env::get('DB_PORT', '3306');
+        $dbname = Env::get('DB_DATABASE', 'campus_event_db');
+        $username = Env::get('DB_USERNAME', 'root');
+        $password = Env::get('DB_PASSWORD', '');
+
+        $dsn = "mysql:host={$host};port={$port};dbname={$dbname};charset=utf8mb4";
+
+        try {
+            self::$connection = new PDO($dsn, $username, $password, [
+                PDO::ATTR_ERRMODE =&gt; PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE =&gt; PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES =&gt; false,
+            ]);
+            return self::$connection;
+        } catch (PDOException $e) {
+            throw new PDOException('Database connection failed: ' . $e->getMessage(), (int) $e->getCode(), $e);
+        }
+    }
+}</code></pre></div>
+      <p><strong>Explanation:</strong> <code>Database::getConnection()</code> implements the <strong>Singleton Pattern</strong>. Reusing one connection across the request saves database socket overhead, and <code>PDO::ATTR_EMULATE_PREPARES =&gt; false</code> ensures true native prepared statements.</p>
+
+      <h3>C. Response &amp; Router Helpers</h3>
+      <span class="file-pill">campus_event_api/app/Helpers/Response.php</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>&lt;?php
+
+declare(strict_types=1);
+
+namespace App\Helpers;
+
+final class Response
+{
+    public static function json(bool $success, string $message, mixed $data = null, int $status = 200, ?array $errors = null): never
+    {
+        http_response_code($status);
+        header('Content-Type: application/json; charset=utf-8');
+
+        $payload = [
+            'success' =&gt; $success,
+            'message' =&gt; $message,
+        ];
+
+        if ($success) {
+            $payload['data'] = $data;
+        } else {
+            $payload['errors'] = $errors ?? new \stdClass();
+        }
+
+        echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        exit;
+    }
+
+    public static function ok(string $message, mixed $data = null, int $status = 200): never
+    {
+        self::json(true, $message, $data, $status);
+    }
+
+    public static function error(string $message, int $status = 400, ?array $errors = null): never
+    {
+        self::json(false, $message, null, $status, $errors);
+    }
+
+    public static function readJsonBody(): array
+    {
+        $raw = file_get_contents('php://input');
+        if ($raw === false || trim($raw) === '') return [];
+        $decoded = json_decode($raw, true);
+        if (!is_array($decoded)) self::error('Invalid JSON request body', 400);
+        return $decoded;
+    }
+}</code></pre></div>
+
+      <span class="file-pill">campus_event_api/app/Helpers/Router.php</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>&lt;?php
+
+declare(strict_types=1);
+
+namespace App\Helpers;
+
+final class Router
+{
+    private array $routes = [];
+
+    public function add(string $method, string $pattern, callable|array $handler, array $middleware = []): void
+    {
+        $regex = preg_replace('#\{([a-zA-Z_][a-zA-Z0-9_]*)\}#', '(?P&lt;$1&gt;[^/]+)', $pattern);
+        $this->routes[] = [
+            'method' =&gt; strtoupper($method),
+            'regex' =&gt; '#^' . $regex . '$#',
+            'handler' =&gt; $handler,
+            'middleware' =&gt; $middleware,
+        ];
+    }
+
+    public function dispatch(string $method, string $path): void
+    {
+        $method = strtoupper($method);
+
+        foreach ($this->routes as $route) {
+            if ($route['method'] !== $method) continue;
+            if (preg_match($route['regex'], $path, $matches)) {
+                $params = [];
+                foreach ($matches as $key =&gt; $value) {
+                    if (is_string($key)) $params[$key] = $value;
+                }
+
+                $context = ['params' =&gt; $params, 'user' =&gt; null];
+                foreach ($route['middleware'] as $mw) {
+                    $context = $mw($context);
+                }
+
+                $handler = $route['handler'];
+                if (is_array($handler)) {
+                    [$class, $action] = $handler;
+                    (new $class())-&gt;$action($context);
+                    return;
+                }
+                $handler($context);
+                return;
+            }
+        }
+
+        Response::error('Endpoint not found', 404);
+    }
+}</code></pre></div>
+      <p><strong>Explanation:</strong> This lightweight router turns route patterns like <code>/api/events/{id}</code> into named regular expression capture groups <code>(?P&lt;id&gt;[^/]+)</code>, extracts <code>$context['params']['id']</code>, runs middleware sequentially, and dispatches to <code>[Controller::class, 'method']</code> without needing an external routing library.</p>
+
+      <h3>D. Role-Based Auth Middleware</h3>
+      <span class="file-pill">campus_event_api/app/Middleware/AuthMiddleware.php</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>&lt;?php
+
+declare(strict_types=1);
+
+namespace App\Middleware;
+
+use App\Helpers\Response;
+use App\Repositories\UserRepository;
+
+final class AuthMiddleware
+{
+    public static function extractBearerToken(): ?string
+    {
+        $header = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
+        if ($header === '' &amp;&amp; function_exists('apache_request_headers')) {
+            $headers = apache_request_headers();
+            $header = $headers['Authorization'] ?? $headers['authorization'] ?? '';
+        }
+        if (preg_match('/Bearer\s+(.+)$/i', $header, $matches)) {
+            return trim($matches[1]);
+        }
+        return null;
+    }
+
+    public static function optional(): callable
+    {
+        return function (array $context): array {
+            $token = self::extractBearerToken();
+            if ($token !== null) {
+                $user = (new UserRepository())-&gt;findBySessionToken($token);
+                if ($user !== null &amp;&amp; (int) $user['is_active'] === 1) {
+                    $context['user'] = $user;
+                    $context['token'] = $token;
+                }
+            }
+            return $context;
+        };
+    }
+
+    public static function requireAuth(array $allowedRoles = []): callable
+    {
+        return function (array $context) use ($allowedRoles): array {
+            $token = self::extractBearerToken();
+            if ($token === null) Response::error('Authentication required', 401);
+
+            $user = (new UserRepository())-&gt;findBySessionToken($token);
+            if ($user === null) Response::error('Invalid or expired session token', 401);
+            if ((int) $user['is_active'] !== 1) Response::error('Account is deactivated', 403);
+
+            if ($allowedRoles !== [] &amp;&amp; !in_array($user['role'], $allowedRoles, true)) {
+                Response::error('Forbidden: insufficient permissions', 403);
+            }
+
+            $context['user'] = $user;
+            $context['token'] = $token;
+            return $context;
+        };
+    }
+}</code></pre></div>
+
+      <h3>E. User Repository &amp; Auth Controller</h3>
+      <span class="file-pill">campus_event_api/app/Repositories/UserRepository.php</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>&lt;?php
+
+declare(strict_types=1);
+
+namespace App\Repositories;
+
+use App\Config\Database;
+use PDO;
+
+final class UserRepository
+{
+    private PDO $db;
+
+    public function __construct()
+    {
+        $this->db = Database::getConnection();
+    }
+
+    public function findByEmail(string $email): ?array
+    {
+        $stmt = $this->db->prepare('SELECT * FROM users WHERE email = :email LIMIT 1');
+        $stmt->execute(['email' => $email]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
+    public function findById(int $id): ?array
+    {
+        $stmt = $this->db->prepare('SELECT id, full_name, email, role, student_id_number, department, phone, is_active, created_at, updated_at FROM users WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => $id]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
+    public function create(array $data): int
+    {
+        $stmt = $this->db->prepare(
+            'INSERT INTO users (full_name, email, password_hash, role, student_id_number, department, phone)
+             VALUES (:full_name, :email, :password_hash, :role, :student_id_number, :department, :phone)'
+        );
+        $stmt->execute([
+            'full_name' => $data['full_name'],
+            'email' => $data['email'],
+            'password_hash' => $data['password_hash'],
+            'role' => $data['role'] ?? 'student',
+            'student_id_number' => $data['student_id_number'] ?? null,
+            'department' => $data['department'] ?? null,
+            'phone' => $data['phone'] ?? null,
+        ]);
+        return (int) $this->db->lastInsertId();
+    }
+
+    public function createSession(int $userId, string $plainToken, string $expiresAt): void
+    {
+        $hash = hash('sha256', $plainToken);
+        $stmt = $this->db->prepare('INSERT INTO user_sessions (user_id, token_hash, expires_at) VALUES (:user_id, :token_hash, :expires_at)');
+        $stmt->execute(['user_id' => $userId, 'token_hash' => $hash, 'expires_at' => $expiresAt]);
+    }
+
+    public function findBySessionToken(string $plainToken): ?array
+    {
+        $hash = hash('sha256', $plainToken);
+        $stmt = $this->db->prepare(
+            'SELECT u.id, u.full_name, u.email, u.role, u.student_id_number, u.department, u.phone, u.is_active
+             FROM user_sessions s
+             INNER JOIN users u ON u.id = s.user_id
+             WHERE s.token_hash = :token_hash AND s.is_revoked = 0 AND s.expires_at > NOW()
+             LIMIT 1'
+        );
+        $stmt->execute(['token_hash' => $hash]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
+    public function revokeSession(string $plainToken): void
+    {
+        $hash = hash('sha256', $plainToken);
+        $stmt = $this->db->prepare('UPDATE user_sessions SET is_revoked = 1 WHERE token_hash = :token_hash');
+        $stmt->execute(['token_hash' => $hash]);
+    }
+}</code></pre></div>
+
+      <span class="file-pill">campus_event_api/app/Controllers/AuthController.php</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>&lt;?php
+
+declare(strict_types=1);
+
+namespace App\Controllers;
+
+use App\Config\Env;
+use App\Helpers\Response;
+use App\Helpers\Validator;
+use App\Repositories\UserRepository;
+
+final class AuthController
+{
+    public function register(array $context): void
+    {
+        $input = Response::readJsonBody();
+        $errors = Validator::requireFields($input, ['full_name', 'email', 'password']);
+        $email = strtolower(trim((string) ($input['email'] ?? '')));
+        if ($email !== '' &amp;&amp; !Validator::isValidEmail($email)) $errors['email'] = 'Invalid email format';
+        $password = (string) ($input['password'] ?? '');
+        if ($password !== '' &amp;&amp; strlen($password) &lt; 6) $errors['password'] = 'Password must be at least 6 characters';
+        if ($errors !== []) Response::error('Validation failed', 422, $errors);
+
+        $repo = new UserRepository();
+        if ($repo->findByEmail($email) !== null) Response::error('Email is already registered', 409);
+
+        // Security rule: force 'student' role during public registration
+        $userId = $repo->create([
+            'full_name' => trim((string) $input['full_name']),
+            'email' => $email,
+            'password_hash' => password_hash($password, PASSWORD_BCRYPT),
+            'role' => 'student',
+            'student_id_number' => $input['student_id_number'] ?? null,
+            'department' => $input['department'] ?? null,
+            'phone' => $input['phone'] ?? null,
+        ]);
+
+        $token = bin2hex(random_bytes(32));
+        $ttlHours = (int) Env::get('TOKEN_TTL_HOURS', '168');
+        $expiresAt = date('Y-m-d H:i:s', time() + ($ttlHours * 3600));
+        $repo->createSession($userId, $token, $expiresAt);
+
+        Response::ok('Registration successful', [
+            'token' => $token,
+            'expires_at' => $expiresAt,
+            'user' => $repo->findById($userId),
+        ], 201);
+    }
+
+    public function login(array $context): void
+    {
+        $input = Response::readJsonBody();
+        $errors = Validator::requireFields($input, ['email', 'password']);
+        if ($errors !== []) Response::error('Validation failed', 422, $errors);
+
+        $email = strtolower(trim((string) $input['email']));
+        $password = (string) $input['password'];
+
+        $repo = new UserRepository();
+        $user = $repo->findByEmail($email);
+
+        if ($user === null || !password_verify($password, $user['password_hash'])) {
+            Response::error('Invalid email or password', 401);
+        }
+        if ((int) $user['is_active'] !== 1) {
+            Response::error('Account is deactivated', 403);
+        }
+
+        $token = bin2hex(random_bytes(32));
+        $ttlHours = (int) Env::get('TOKEN_TTL_HOURS', '168');
+        $expiresAt = date('Y-m-d H:i:s', time() + ($ttlHours * 3600));
+        $repo->createSession((int) $user['id'], $token, $expiresAt);
+
+        unset($user['password_hash']);
+        Response::ok('Login successful', [
+            'token' => $token,
+            'expires_at' => $expiresAt,
+            'user' => $user,
+        ]);
+    }
+
+    public function logout(array $context): void
+    {
+        if (!empty($context['token'])) {
+            (new UserRepository())->revokeSession($context['token']);
+        }
+        Response::ok('Logged out successfully');
+    }
+}</code></pre></div>
+
+      <h3>F. Public Entry Point &amp; Routes</h3>
+      <span class="file-pill">campus_event_api/public/index.php</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>&lt;?php
+
+declare(strict_types=1);
+
+use App\Config\Env;
+use App\Helpers\Response;
+
+// CORS headers for Flutter mobile and web development
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(204);
+    exit;
+}
+
+$autoload = __DIR__ . '/../vendor/autoload.php';
+if (!is_file($autoload)) {
+    Response::error('Composer dependencies not installed. Run "composer install".', 500);
+}
+require_once $autoload;
+
+Env::load(__DIR__ . '/../.env');
+
+set_exception_handler(function (Throwable $e): void {
+    $debug = Env::get('APP_DEBUG', 'false') === 'true';
+    $logFile = __DIR__ . '/../storage/logs/app.log';
+    @file_put_contents($logFile, '[' . date('c') . '] ' . $e->getMessage() . PHP_EOL, FILE_APPEND);
+    Response::error($debug ? $e->getMessage() : 'Internal server error', 500);
+});
+
+$uriPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+$router = require __DIR__ . '/../routes/api.php';
+$router->dispatch($_SERVER['REQUEST_METHOD'], $uriPath);</code></pre></div>
+
+      <span class="file-pill">campus_event_api/routes/api.php</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>&lt;?php
+
+declare(strict_types=1);
+
+use App\Controllers\AdminController;
+use App\Controllers\AttendanceController;
+use App\Controllers\AuthController;
+use App\Controllers\EventController;
+use App\Controllers\NotificationController;
+use App\Controllers\ProfileController;
+use App\Controllers\RegistrationController;
+use App\Helpers\Response;
+use App\Helpers\Router;
+use App\Middleware\AuthMiddleware;
+
+$router = new Router();
+
+// Health check
+$router->add('GET', '/api/health', function (): void {
+    Response::ok('Campus Event API is running', ['timestamp' => date('c')]);
+});
+
+// Authentication
+$router->add('POST', '/api/auth/register', [AuthController::class, 'register']);
+$router->add('POST', '/api/auth/login', [AuthController::class, 'login']);
+$router->add('POST', '/api/auth/logout', [AuthController::class, 'logout'], [AuthMiddleware::requireAuth()]);
+
+// Categories &amp; Events
+$router->add('GET', '/api/categories', [EventController::class, 'categories']);
+$router->add('GET', '/api/events', [EventController::class, 'index'], [AuthMiddleware::optional()]);
+$router->add('GET', '/api/events/{id}', [EventController::class, 'show'], [AuthMiddleware::optional()]);
+$router->add('POST', '/api/events', [EventController::class, 'store'], [AuthMiddleware::requireAuth(['organizer', 'admin'])]);
+$router->add('PUT', '/api/events/{id}', [EventController::class, 'update'], [AuthMiddleware::requireAuth(['organizer', 'admin'])]);
+$router->add('DELETE', '/api/events/{id}', [EventController::class, 'destroy'], [AuthMiddleware::requireAuth(['organizer', 'admin'])]);
+
+// Registrations
+$router->add('POST', '/api/events/{id}/register', [RegistrationController::class, 'register'], [AuthMiddleware::requireAuth()]);
+$router->add('DELETE', '/api/events/{id}/register', [RegistrationController::class, 'cancel'], [AuthMiddleware::requireAuth()]);
+$router->add('GET', '/api/my-registrations', [RegistrationController::class, 'myRegistrations'], [AuthMiddleware::requireAuth()]);
+$router->add('GET', '/api/events/{id}/registrants', [RegistrationController::class, 'eventRegistrants'], [AuthMiddleware::requireAuth(['organizer', 'admin'])]);
+
+// QR Attendance
+$router->add('POST', '/api/events/{id}/attendance/qr', [AttendanceController::class, 'generateQr'], [AuthMiddleware::requireAuth(['organizer', 'admin'])]);
+$router->add('POST', '/api/attendance/verify', [AttendanceController::class, 'verify'], [AuthMiddleware::requireAuth(['student'])]);
+$router->add('GET', '/api/events/{id}/attendance', [AttendanceController::class, 'eventReport'], [AuthMiddleware::requireAuth(['organizer', 'admin'])]);
+$router->add('GET', '/api/my-attendance', [AttendanceController::class, 'myAttendance'], [AuthMiddleware::requireAuth()]);
+
+// Notifications &amp; Profile
+$router->add('POST', '/api/notifications/device-token', [NotificationController::class, 'saveDeviceToken'], [AuthMiddleware::requireAuth()]);
+$router->add('POST', '/api/notifications/send', [NotificationController::class, 'send'], [AuthMiddleware::requireAuth(['organizer', 'admin'])]);
+$router->add('GET', '/api/profile', [ProfileController::class, 'show'], [AuthMiddleware::requireAuth()]);
+$router->add('PUT', '/api/profile', [ProfileController::class, 'update'], [AuthMiddleware::requireAuth()]);
+
+// Admin
+$router->add('GET', '/api/admin/stats', [AdminController::class, 'stats'], [AuthMiddleware::requireAuth(['admin'])]);
+$router->add('GET', '/api/admin/users', [AdminController::class, 'users'], [AuthMiddleware::requireAuth(['admin'])]);
+$router->add('PATCH', '/api/admin/users/{id}/status', [AdminController::class, 'toggleUserStatus'], [AuthMiddleware::requireAuth(['admin'])]);
+$router->add('POST', '/api/categories', [AdminController::class, 'createCategory'], [AuthMiddleware::requireAuth(['admin'])]);
+$router->add('PATCH', '/api/admin/events/{id}/status', [AdminController::class, 'updateEventStatus'], [AuthMiddleware::requireAuth(['admin'])]);
+
+return $router;</code></pre></div>
+
+      <h2>4. Run the Server &amp; Verify Endpoints</h2>
       <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>cd campus_event_api
-composer install
-cp .env.example .env
-mysql -u root -p &lt; database/database.sql
+composer dump-autoload
 php -S 0.0.0.0:8000 -t public</code></pre></div>
-      <h2>2. Security Highlights in <code>AuthController.php</code></h2>
-      <ul>
-        <li>Public <code>/api/auth/register</code> always forces <code>role = 'student'</code>.</li>
-        <li>Passwords are hashed with <code>password_hash($password, PASSWORD_BCRYPT)</code>.</li>
-        <li>Opaque 64-char hex bearer tokens are hashed with <code>hash('sha256', $token)</code> before storing in <code>user_sessions</code>.</li>
-      </ul>
-      <div class="callout ok"><strong>Expected Output:</strong> Visiting <code>http://localhost:8000/api/health</code> returns <code>{"success":true,"message":"Campus Event API is running",...}</code>.</div>
+      <p>Test the endpoints using curl, PowerShell, or Postman:</p>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code># 1. Health check
+curl http://localhost:8000/api/health
+
+# 2. Login as student (returns Bearer token)
+curl -X POST http://localhost:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"student@campus.edu\",\"password\":\"Password123!\"}"
+
+# 3. List published events
+curl http://localhost:8000/api/events</code></pre></div>
+
+      <div class="callout ok"><strong>Expected Output:</strong> The health endpoint returns HTTP 200 with <code>{"success":true,"message":"Campus Event API is running"}</code>, and login returns HTTP 200 with an opaque 64-character token and user object.</div>
+
+      <h2>Checkpoint</h2>
+      <ol>
+        <li>Why do we run <code>php -S 0.0.0.0:8000 -t public</code> instead of running it from the root folder <code>campus_event_api/</code>?</li>
+        <li>How does <code>AuthMiddleware::requireAuth(['organizer', 'admin'])</code> prevent students from creating events?</li>
+      </ol>
+      <details>
+        <summary>Reveal Checkpoint Answers</summary>
+        <p><strong>1.</strong> The <code>-t public</code> flag sets the web document root to <code>public/</code> only. This prevents web users from downloading your <code>.env</code> file, <code>storage/</code> credentials, or PHP source code via a browser URL.</p>
+        <p><strong>2.</strong> The middleware extracts the Bearer token, looks up the session in <code>user_sessions</code> and <code>users</code>, and checks if <code>$user['role']</code> is in the allowed list. If a student tries to call <code>POST /api/events</code>, the middleware halts execution immediately with HTTP 403 Forbidden.</p>
+      </details>
+
+      <div class="callout"><strong>Git Checkpoint:</strong> <code>git add . &amp;&amp; git commit -m "feat: implement PHP 8 REST API with PDO, routing, auth middleware, and MySQL schema"</code></div>
     </div>
   </section>
 
-  <!-- CHAPTER 9 -->
-  <section class="chapter" data-title="9. Integrate Flutter & PHP" data-time="55 min">
+  <!-- ==================== CHAPTER 9 ==================== -->
+  <section class="chapter" data-title="9. Integrate Flutter & PHP" data-time="80 min">
     <div class="card">
       <div class="meta-row">
         <span class="badge">Chapter 9</span>
-        <span class="badge">Est. 55 min</span>
+        <span class="badge">Est. 80 min</span>
+        <span class="badge teal">Sprints 3 &amp; 4: End-to-End Integration</span>
       </div>
-      <h1>Sprints 3 &amp; 4: Integrate Flutter with PHP</h1>
-      <p><strong>Learning Objective:</strong> Trace how data flows from a button tap &rarr; ViewModel &rarr; Repository &rarr; <code>ApiClient</code> &rarr; PHP &rarr; MySQL and back.</p>
-      <h2>Networking &amp; Token Storage</h2>
-      <ul>
-        <li><code>lib/core/constants/api_constants.dart</code> uses <code>http://10.0.2.2:8000</code> for the Android Emulator and supports <code>--dart-define=API_BASE_URL=...</code> for physical devices.</li>
-        <li><code>lib/core/network/api_client.dart</code> automatically reads the bearer token from <code>FlutterSecureStorage</code> and attaches <code>Authorization: Bearer &lt;token&gt;</code>.</li>
-      </ul>
-      <h2>Data Flow Example: Event Registration</h2>
+      <h1>Sprints 3 &amp; 4: Integrate Flutter (Riverpod) with PHP</h1>
+      <p><strong>Learning Objective:</strong> Connect the Flutter frontend to the PHP REST API end-to-end. You will implement typed network communication (<code>ApiClient</code>, <code>ApiException</code>), domain models (<code>EventModel</code>, <code>RegistrationModel</code>), API services, data repositories, Riverpod ViewModels, and responsive UI screens (Event List, Event Details, Event Form, and My Registrations).</p>
+
+      <h2>1. The End-to-End Request &amp; Response Flow</h2>
+      <div class="diagram-box">
+        <svg viewBox="0 0 820 185" width="100%" style="max-width:780px" role="img" aria-label="End to End Data Flow Diagram">
+          <defs>
+            <marker id="arrFlow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+              <polygon points="0 0, 10 3.5, 0 7" fill="#0d9488"/>
+            </marker>
+          </defs>
+          <rect x="15" y="35" width="140" height="95" rx="10" fill="#eff6ff" stroke="#1e3a8a" stroke-width="1.5"/>
+          <text x="85" y="60" text-anchor="middle" font-weight="700" fill="#1e3a8a" font-size="11">1. View (Screen)</text>
+          <text x="85" y="80" text-anchor="middle" fill="#475569" font-size="9">User taps "Register"</text>
+          <text x="85" y="98" text-anchor="middle" fill="#0d9488" font-size="9">ref.read(notifier)</text>
+
+          <rect x="180" y="35" width="145" height="95" rx="10" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5"/>
+          <text x="252" y="60" text-anchor="middle" font-weight="700" fill="#0d9488" font-size="11">2. ViewModel</text>
+          <text x="252" y="80" text-anchor="middle" fill="#475569" font-size="9">isSubmitting = true</text>
+          <text x="252" y="98" text-anchor="middle" fill="#475569" font-size="9">calls Repository</text>
+
+          <rect x="350" y="35" width="140" height="95" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+          <text x="420" y="60" text-anchor="middle" font-weight="700" fill="#b45309" font-size="11">3. Repo &amp; ApiClient</text>
+          <text x="420" y="80" text-anchor="middle" fill="#475569" font-size="9">Attaches Bearer token</text>
+          <text x="420" y="98" text-anchor="middle" fill="#475569" font-size="9">POST /api/events/1/register</text>
+
+          <rect x="515" y="35" width="140" height="95" rx="10" fill="#0f172a"/>
+          <text x="585" y="60" text-anchor="middle" font-weight="700" fill="#ffffff" font-size="11">4. PHP &amp; MySQL</text>
+          <text x="585" y="80" text-anchor="middle" fill="#94a3b8" font-size="9">Checks capacity &amp; dup</text>
+          <text x="585" y="98" text-anchor="middle" fill="#86efac" font-size="9">INSERT INTO reg</text>
+
+          <rect x="680" y="35" width="125" height="95" rx="10" fill="#ecfdf5" stroke="#10b981" stroke-width="1.5"/>
+          <text x="742" y="60" text-anchor="middle" font-weight="700" fill="#047857" font-size="11">5. Reactive UI</text>
+          <text x="742" y="80" text-anchor="middle" fill="#475569" font-size="9">state updated</text>
+          <text x="742" y="98" text-anchor="middle" fill="#475569" font-size="9">SnackBar: Registered!</text>
+
+          <line x1="155" y1="82" x2="178" y2="82" stroke="#0d9488" stroke-width="2" marker-end="url(#arrFlow)"/>
+          <line x1="325" y1="82" x2="348" y2="82" stroke="#0d9488" stroke-width="2" marker-end="url(#arrFlow)"/>
+          <line x1="490" y1="82" x2="513" y2="82" stroke="#0d9488" stroke-width="2" marker-end="url(#arrFlow)"/>
+          <line x1="655" y1="82" x2="678" y2="82" stroke="#0d9488" stroke-width="2" marker-end="url(#arrFlow)"/>
+        </svg>
+        <div class="diagram-caption">Figure 9.1: Step-by-step path of user action down to the database and back up to update the UI reactively.</div>
+      </div>
+
+      <h2>2. Step-by-Step Implementation</h2>
+
+      <h3>Step 1: Network Client &amp; Bearer Token Injection</h3>
+      <p>The <code>ApiClient</code> centralizes all HTTP verbs, timeout handling, error status code decoding, and automatically injects <code>Authorization: Bearer &lt;token&gt;</code> from <code>FlutterSecureStorage</code>.</p>
+      <span class="file-pill">campus_event_app/lib/core/network/api_client.dart</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
+
+import '../constants/api_constants.dart';
+import '../errors/api_exception.dart';
+
+class ApiClient {
+  ApiClient({
+    http.Client? httpClient,
+    FlutterSecureStorage? secureStorage,
+  })  : _httpClient = httpClient ?? http.Client(),
+        _secureStorage = secureStorage ?? const FlutterSecureStorage();
+
+  static const String _tokenKey = 'campus_auth_token';
+  final http.Client _httpClient;
+  final FlutterSecureStorage _secureStorage;
+
+  Future&lt;void&gt; saveToken(String token) =&gt;
+      _secureStorage.write(key: _tokenKey, value: token);
+
+  Future&lt;String?&gt; getToken() =&gt; _secureStorage.read(key: _tokenKey);
+
+  Future&lt;void&gt; clearToken() =&gt; _secureStorage.delete(key: _tokenKey);
+
+  Future&lt;Map&lt;String, dynamic&gt;&gt; get(String path, {Map&lt;String, String&gt;? queryParameters}) =&gt;
+      _send('GET', path, queryParameters: queryParameters);
+
+  Future&lt;Map&lt;String, dynamic&gt;&gt; post(String path, {Map&lt;String, dynamic&gt;? body}) =&gt;
+      _send('POST', path, body: body);
+
+  Future&lt;Map&lt;String, dynamic&gt;&gt; put(String path, {Map&lt;String, dynamic&gt;? body}) =&gt;
+      _send('PUT', path, body: body);
+
+  Future&lt;Map&lt;String, dynamic&gt;&gt; delete(String path) =&gt;
+      _send('DELETE', path);
+
+  Future&lt;Map&lt;String, dynamic&gt;&gt; _send(
+    String method,
+    String path, {
+    Map&lt;String, String&gt;? queryParameters,
+    Map&lt;String, dynamic&gt;? body,
+  }) async {
+    final uri = Uri.parse('${ApiConstants.baseUrl}$path').replace(
+      queryParameters: queryParameters == null || queryParameters.isEmpty ? null : queryParameters,
+    );
+
+    final token = await getToken();
+    final headers = &lt;String, String&gt;{
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (token != null &amp;&amp; token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
+
+    try {
+      late final http.Response response;
+      final encodedBody = body != null ? jsonEncode(body) : null;
+
+      switch (method) {
+        case 'GET':
+          response = await _httpClient.get(uri, headers: headers).timeout(const Duration(seconds: 15));
+          break;
+        case 'POST':
+          response = await _httpClient.post(uri, headers: headers, body: encodedBody).timeout(const Duration(seconds: 15));
+          break;
+        case 'PUT':
+          response = await _httpClient.put(uri, headers: headers, body: encodedBody).timeout(const Duration(seconds: 15));
+          break;
+        case 'DELETE':
+          response = await _httpClient.delete(uri, headers: headers).timeout(const Duration(seconds: 15));
+          break;
+        default:
+          throw ApiException(message: 'Unsupported method: $method');
+      }
+
+      final decoded = _decodeJson(response.body);
+      if (response.statusCode &gt;= 200 &amp;&amp; response.statusCode &lt; 300 &amp;&amp; decoded['success'] == true) {
+        return decoded;
+      }
+
+      final rawErrors = decoded['errors'];
+      final fieldErrors = &lt;String, String&gt;{};
+      if (rawErrors is Map) {
+        rawErrors.forEach((key, val) =&gt; fieldErrors[key.toString()] = val.toString());
+      }
+
+      throw ApiException(
+        message: (decoded['message'] as String?) ?? 'Request failed',
+        statusCode: response.statusCode,
+        fieldErrors: fieldErrors,
+      );
+    } on SocketException {
+      throw const ApiException(message: 'Unable to reach server. Check network and API URL.');
+    }
+  }
+
+  Map&lt;String, dynamic&gt; _decodeJson(String body) {
+    if (body.trim().isEmpty) return {'success': true, 'message': 'OK', 'data': null};
+    final decoded = jsonDecode(body);
+    if (decoded is Map&lt;String, dynamic&gt;) return decoded;
+    throw const FormatException('Expected JSON object');
+  }
+}</code></pre></div>
+
+      <h3>Step 2: Domain Models (Immutable with fromJson factories)</h3>
+      <span class="file-pill">campus_event_app/lib/features/events/models/event_model.dart</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>class CategoryModel {
+  const CategoryModel({required this.id, required this.name, this.description});
+  final int id;
+  final String name;
+  final String? description;
+
+  factory CategoryModel.fromJson(Map&lt;String, dynamic&gt; json) =&gt; CategoryModel(
+        id: int.parse(json['id'].toString()),
+        name: (json['name'] ?? '').toString(),
+        description: json['description']?.toString(),
+      );
+}
+
+class EventModel {
+  const EventModel({
+    required this.id,
+    required this.organizerId,
+    required this.categoryId,
+    required this.title,
+    required this.description,
+    required this.venue,
+    required this.startTime,
+    required this.endTime,
+    required this.maxCapacity,
+    required this.status,
+    this.categoryName,
+    this.organizerName,
+    this.registeredCount = 0,
+    this.isRegistered = false,
+  });
+
+  final int id;
+  final int organizerId;
+  final int categoryId;
+  final String title;
+  final String description;
+  final String venue;
+  final String startTime;
+  final String endTime;
+  final int maxCapacity;
+  final String status;
+  final String? categoryName;
+  final String? organizerName;
+  final int registeredCount;
+  final bool isRegistered;
+
+  bool get isFull =&gt; registeredCount &gt;= maxCapacity;
+
+  factory EventModel.fromJson(Map&lt;String, dynamic&gt; json) =&gt; EventModel(
+        id: int.parse(json['id'].toString()),
+        organizerId: int.parse(json['organizer_id'].toString()),
+        categoryId: int.parse(json['category_id'].toString()),
+        title: (json['title'] ?? '').toString(),
+        description: (json['description'] ?? '').toString(),
+        venue: (json['venue'] ?? '').toString(),
+        startTime: (json['start_time'] ?? '').toString(),
+        endTime: (json['end_time'] ?? '').toString(),
+        maxCapacity: int.tryParse(json['max_capacity'].toString()) ?? 0,
+        status: (json['status'] ?? 'published').toString(),
+        categoryName: json['category_name']?.toString(),
+        organizerName: json['organizer_name']?.toString(),
+        registeredCount: int.tryParse(json['registered_count']?.toString() ?? '0') ?? 0,
+        isRegistered: json['is_registered'] == true || json['is_registered'].toString() == '1',
+      );
+}</code></pre></div>
+
+      <span class="file-pill">campus_event_app/lib/features/registrations/models/registration_model.dart</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>class RegistrationModel {
+  const RegistrationModel({
+    required this.registrationId,
+    required this.eventId,
+    required this.title,
+    required this.venue,
+    required this.startTime,
+    required this.endTime,
+    required this.registrationStatus,
+    required this.eventStatus,
+    required this.categoryName,
+    this.attendanceMarkedAt,
+  });
+
+  final int registrationId;
+  final int eventId;
+  final String title;
+  final String venue;
+  final String startTime;
+  final String endTime;
+  final String registrationStatus;
+  final String eventStatus;
+  final String categoryName;
+  final String? attendanceMarkedAt;
+
+  bool get isAttended =&gt; attendanceMarkedAt != null &amp;&amp; attendanceMarkedAt!.isNotEmpty;
+
+  factory RegistrationModel.fromJson(Map&lt;String, dynamic&gt; json) =&gt; RegistrationModel(
+        registrationId: int.parse(json['registration_id'].toString()),
+        eventId: int.parse(json['event_id'].toString()),
+        title: (json['title'] ?? '').toString(),
+        venue: (json['venue'] ?? '').toString(),
+        startTime: (json['start_time'] ?? '').toString(),
+        endTime: (json['end_time'] ?? '').toString(),
+        registrationStatus: (json['registration_status'] ?? 'registered').toString(),
+        eventStatus: (json['event_status'] ?? 'published').toString(),
+        categoryName: (json['category_name'] ?? '').toString(),
+        attendanceMarkedAt: json['attendance_marked_at']?.toString(),
+      );
+}</code></pre></div>
+
+      <h3>Step 3: Repositories &amp; Services</h3>
+      <span class="file-pill">campus_event_app/lib/features/events/repositories/event_repository.dart</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>import '../models/event_model.dart';
+import '../services/event_service.dart';
+
+class EventRepository {
+  EventRepository(this._service);
+  final EventService _service;
+
+  Future&lt;List&lt;CategoryModel&gt;&gt; getCategories() async {
+    final resp = await _service.fetchCategories();
+    final list = (resp['data']?['categories'] as List?) ?? [];
+    return list.map((e) =&gt; CategoryModel.fromJson(e as Map&lt;String, dynamic&gt;)).toList();
+  }
+
+  Future&lt;List&lt;EventModel&gt;&gt; getEvents({String? search, int? categoryId, bool mine = false}) async {
+    final resp = await _service.fetchEvents(search: search, categoryId: categoryId, mine: mine);
+    final list = (resp['data']?['events'] as List?) ?? [];
+    return list.map((e) =&gt; EventModel.fromJson(e as Map&lt;String, dynamic&gt;)).toList();
+  }
+
+  Future&lt;EventModel&gt; getEventDetail(int id) async {
+    final resp = await _service.fetchEventDetail(id);
+    return EventModel.fromJson(resp['data']['event'] as Map&lt;String, dynamic&gt;);
+  }
+
+  Future&lt;EventModel&gt; createEvent(Map&lt;String, dynamic&gt; payload) async {
+    final resp = await _service.createEvent(payload);
+    return EventModel.fromJson(resp['data']['event'] as Map&lt;String, dynamic&gt;);
+  }
+
+  Future&lt;EventModel&gt; updateEvent(int id, Map&lt;String, dynamic&gt; payload) async {
+    final resp = await _service.updateEvent(id, payload);
+    return EventModel.fromJson(resp['data']['event'] as Map&lt;String, dynamic&gt;);
+  }
+
+  Future&lt;void&gt; cancelEvent(int id) =&gt; _service.cancelEvent(id);
+}</code></pre></div>
+
+      <h3>Step 4: Riverpod ViewModels (State + Notifier)</h3>
+      <span class="file-pill">campus_event_app/lib/features/registrations/viewmodels/registration_viewmodel.dart</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/errors/api_exception.dart';
+import '../../../core/providers/core_providers.dart';
+import '../models/registration_model.dart';
+import '../repositories/registration_repository.dart';
+import '../services/registration_service.dart';
+
+class RegistrationState {
+  const RegistrationState({
+    this.registrations = const [],
+    this.isLoading = false,
+    this.isSubmitting = false,
+    this.errorMessage,
+  });
+
+  final List&lt;RegistrationModel&gt; registrations;
+  final bool isLoading;
+  final bool isSubmitting;
+  final String? errorMessage;
+
+  RegistrationState copyWith({
+    List&lt;RegistrationModel&gt;? registrations,
+    bool? isLoading,
+    bool? isSubmitting,
+    String? errorMessage,
+    bool clearError = false,
+  }) =&gt; RegistrationState(
+        registrations: registrations ?? this.registrations,
+        isLoading: isLoading ?? this.isLoading,
+        isSubmitting: isSubmitting ?? this.isSubmitting,
+        errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      );
+}
+
+final registrationRepositoryProvider = Provider&lt;RegistrationRepository&gt;(
+  (ref) =&gt; RegistrationRepository(RegistrationService(ref.watch(apiClientProvider))),
+);
+
+final registrationViewModelProvider =
+    NotifierProvider&lt;RegistrationViewModel, RegistrationState&gt;(RegistrationViewModel.new);
+
+class RegistrationViewModel extends Notifier&lt;RegistrationState&gt; {
+  @override
+  RegistrationState build() =&gt; const RegistrationState();
+
+  RegistrationRepository get _repository =&gt; ref.read(registrationRepositoryProvider);
+
+  Future&lt;void&gt; loadMyRegistrations() async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final list = await _repository.getMyRegistrations();
+      state = state.copyWith(registrations: list, isLoading: false);
+    } on ApiException catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
+    } catch (_) {
+      state = state.copyWith(isLoading: false, errorMessage: 'Failed to load registrations.');
+    }
+  }
+
+  Future&lt;String?&gt; registerForEvent(int eventId) async {
+    state = state.copyWith(isSubmitting: true);
+    try {
+      await _repository.register(eventId);
+      await loadMyRegistrations();
+      return null;
+    } on ApiException catch (e) {
+      return e.message;
+    } catch (_) {
+      return 'Registration failed. Please try again.';
+    } finally {
+      state = state.copyWith(isSubmitting: false);
+    }
+  }
+
+  Future&lt;String?&gt; cancelRegistration(int eventId) async {
+    state = state.copyWith(isSubmitting: true);
+    try {
+      await _repository.cancel(eventId);
+      await loadMyRegistrations();
+      return null;
+    } on ApiException catch (e) {
+      return e.message;
+    } finally {
+      state = state.copyWith(isSubmitting: false);
+    }
+  }
+}</code></pre></div>
+
+      <h3>Step 5: Event Detail Screen with Dynamic Action Buttons</h3>
+      <span class="file-pill">campus_event_app/lib/features/events/views/event_detail_screen.dart</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>// Dynamic button rendering based on Role, Registration, and Event status:
+if (user != null &amp;&amp; user.isStudent) ...[
+  if (event.isRegistered)
+    Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FilledButton.icon(
+          onPressed: () =&gt; context.push('/attendance/scan'),
+          icon: const Icon(Icons.qr_code_scanner),
+          label: const Text('Scan Attendance QR'),
+        ),
+        const SizedBox(height: 10),
+        OutlinedButton(
+          onPressed: regState.isSubmitting ? null : _handleCancelRegistration,
+          child: const Text('Cancel Registration'),
+        ),
+      ],
+    )
+  else
+    FilledButton(
+      onPressed: (regState.isSubmitting || event.isFull || event.status != 'published')
+          ? null
+          : _handleRegister,
+      child: Text(
+        event.isFull ? 'Event Full' : event.status != 'published' ? 'Registration Closed' : 'Register Now',
+      ),
+    ),
+]
+if (isOwnerOrAdmin) ...[
+  FilledButton.icon(
+    onPressed: () =&gt; context.push('/attendance/qr/${event.id}', extra: event),
+    icon: const Icon(Icons.qr_code_2),
+    label: const Text('Generate Attendance QR'),
+  ),
+  const SizedBox(height: 10),
+  OutlinedButton.icon(
+    onPressed: () =&gt; context.push('/attendance/report/${event.id}', extra: event),
+    icon: const Icon(Icons.analytics_outlined),
+    label: const Text('View Attendance Report'),
+  ),
+]</code></pre></div>
+
+      <h2>3. Verifying Event Management &amp; Registration</h2>
       <ol>
-        <li>Student taps <strong>Register Now</strong> in <code>EventDetailScreen</code>.</li>
-        <li><code>RegistrationViewModel.registerForEvent()</code> sets <code>isSubmitting = true</code>.</li>
-        <li><code>RegistrationRepository</code> calls <code>POST /api/events/{id}/register</code>.</li>
-        <li>PHP checks event status, capacity, and duplicate registration, then inserts into <code>event_registrations</code>.</li>
+        <li>Start your PHP API: <code>cd campus_event_api &amp;&amp; php -S 0.0.0.0:8000 -t public</code>.</li>
+        <li>Run Flutter: <code>cd campus_event_app &amp;&amp; flutter run</code>.</li>
+        <li>Log in as <code>student@campus.edu</code> / <code>Password123!</code>.</li>
+        <li>Browse to <strong>Explore</strong> &rarr; Select an event &rarr; Tap <strong>Register Now</strong>.</li>
+        <li>Verify the button turns into <strong>Scan Attendance QR</strong> and the registration appears in <strong>My Events</strong>.</li>
+        <li>Try tapping Register again on the same event in Postman &rarr; Verify the server returns <strong>HTTP 409 Conflict</strong> ("You are already registered for this event").</li>
       </ol>
+
+      <h2>Checkpoint</h2>
+      <ol>
+        <li>Why does <code>EventModel.fromJson</code> convert nullable fields like <code>is_registered</code> safely instead of using a direct cast <code>json['is_registered'] as bool</code>?</li>
+        <li>Why does <code>RegistrationViewModel.registerForEvent()</code> return a <code>String?</code> (error message or null) instead of setting a global error banner?</li>
+      </ol>
+      <details>
+        <summary>Reveal Checkpoint Answers</summary>
+        <p><strong>1.</strong> Because MySQL PDO returns booleans as integer <code>1</code> or <code>0</code> or string <code>"1"</code> depending on PDO driver configuration. Direct casting would crash at runtime.</p>
+        <p><strong>2.</strong> Returning <code>String?</code> gives the calling screen immediate feedback so it can show a localized <code>SnackBar</code> and refresh the event details only if the registration succeeded.</p>
+      </details>
+
+      <div class="callout"><strong>Git Checkpoint:</strong> <code>git add . &amp;&amp; git commit -m "feat: integrate event management and event registration with PHP API via Riverpod"</code></div>
     </div>
   </section>
 
-  <!-- CHAPTER 10 -->
+  <!-- ==================== CHAPTER 10 ==================== -->
   <section class="chapter" data-title="10. QR Attendance" data-time="50 min">
     <div class="card">
       <div class="meta-row">
         <span class="badge">Chapter 10</span>
         <span class="badge">Est. 50 min</span>
       </div>
-      <h1>Sprint 5: Secure QR Code Attendance</h1>
-      <p><strong>Learning Objective:</strong> Implement time-limited QR generation and server-side attendance verification.</p>
-      <div class="callout warn"><strong>Why not static QR codes?</strong> A static QR code containing only <code>event_id=1</code> can be photographed and shared with absent students. Our PHP backend generates a random <code>CAMPUS_QR_...</code> token, stores its SHA-256 hash in <code>attendance_qr_tokens</code> with a 15-minute expiry, and verifies registration + duplicate attendance on the server.</div>
-      <h2>Key Files</h2>
-      <ul>
-        <li><code>campus_event_api/app/Controllers/AttendanceController.php</code> (<code>generateQr</code>, <code>verify</code>, <code>eventReport</code>)</li>
-        <li><code>campus_event_app/lib/features/attendance/views/qr_generate_screen.dart</code> (<code>qr_flutter</code>)</li>
-        <li><code>campus_event_app/lib/features/attendance/views/qr_scan_screen.dart</code> (<code>mobile_scanner</code> + manual emulator paste box)</li>
-      </ul>
+      <h1>Sprint 5: Secure QR Code Attendance Workflow</h1>
+      <p><strong>Learning Objective:</strong> Implement time-limited QR generation and 5-step server-side attendance verification.</p>
+
+      <div class="diagram-box">
+        <svg viewBox="0 0 800 185" width="100%" style="max-width:760px" role="img" aria-label="QR Attendance Security Flow">
+          <defs>
+            <marker id="arr4" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+              <polygon points="0 0, 10 3.5, 0 7" fill="#0d9488"/>
+            </marker>
+          </defs>
+          <rect x="15" y="40" width="165" height="95" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+          <text x="97" y="68" text-anchor="middle" font-weight="700" fill="#b45309" font-size="13">1. Organizer App</text>
+          <text x="97" y="88" text-anchor="middle" fill="#475569" font-size="11">Requests 15-min QR</text>
+          <text x="97" y="106" text-anchor="middle" fill="#475569" font-size="11">Renders QrImageView</text>
+
+          <rect x="220" y="40" width="165" height="95" rx="10" fill="#eff6ff" stroke="#1e3a8a" stroke-width="2"/>
+          <text x="302" y="68" text-anchor="middle" font-weight="700" fill="#1e3a8a" font-size="13">2. Student App</text>
+          <text x="302" y="88" text-anchor="middle" fill="#475569" font-size="11">Scans with MobileScanner</text>
+          <text x="302" y="106" text-anchor="middle" fill="#475569" font-size="11">POST /attendance/verify</text>
+
+          <rect x="425" y="20" width="355" height="145" rx="12" fill="#0f172a"/>
+          <text x="602" y="46" text-anchor="middle" font-weight="700" fill="#ffffff" font-size="13">3. PHP Server-Side Verification (5 Checks)</text>
+          <text x="445" y="70" fill="#86efac" font-size="11">&check; Token exists in attendance_qr_tokens &amp; not revoked</text>
+          <text x="445" y="90" fill="#86efac" font-size="11">&check; Current time &le; expires_at (not expired)</text>
+          <text x="445" y="110" fill="#86efac" font-size="11">&check; Event status == 'published'</text>
+          <text x="445" y="130" fill="#86efac" font-size="11">&check; Student has active registration for event</text>
+          <text x="445" y="150" fill="#86efac" font-size="11">&check; No duplicate attendance row (HTTP 409 if exists)</text>
+
+          <line x1="180" y1="88" x2="218" y2="88" stroke="#0d9488" stroke-width="2" marker-end="url(#arr4)"/>
+          <line x1="385" y1="88" x2="423" y2="88" stroke="#0d9488" stroke-width="2" marker-end="url(#arr4)"/>
+        </svg>
+        <div class="diagram-caption">Figure 10.1: Time-limited QR verification flow. The mobile app never decides if attendance is valid—the PHP backend does.</div>
+      </div>
+
+      <h2>Backend Verification Code</h2>
+      <span class="file-pill">campus_event_api/app/Controllers/AttendanceController.php</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>if ($qrRecord === null || (int) $qrRecord['is_revoked'] === 1) {
+    Response::error('Invalid attendance QR code', 400);
+}
+if (strtotime($qrRecord['expires_at']) &lt; time()) {
+    Response::error('Attendance QR code has expired', 400);
+}
+$registration = (new RegistrationRepository())-&gt;findByEventAndUser($eventId, $userId);
+if ($registration === null || $registration['status'] !== 'registered') {
+    Response::error('You must be registered for this event to mark attendance', 403);
+}
+if ($attRepo-&gt;findByRegistrationId((int) $registration['id']) !== null) {
+    Response::error('Attendance already recorded for this event', 409);
+}</code></pre></div>
     </div>
   </section>
 
-  <!-- CHAPTER 11 -->
+  <!-- ==================== CHAPTER 11 ==================== -->
   <section class="chapter" data-title="11. Push Notifications" data-time="45 min">
     <div class="card">
       <div class="meta-row">
         <span class="badge">Chapter 11</span>
         <span class="badge">Est. 45 min</span>
       </div>
-      <h1>Sprint 6: Firebase Cloud Messaging (FCM)</h1>
-      <p><strong>Learning Objective:</strong> Register Android device tokens with PHP and send event notifications via FCM HTTP v1.</p>
+      <h1>Sprint 6: Firebase Cloud Messaging (FCM HTTP v1)</h1>
+      <p><strong>Learning Objective:</strong> Register Android FCM device tokens with PHP and send event notifications from the backend using OAuth2 service accounts.</p>
+
+      <div class="diagram-box">
+        <svg viewBox="0 0 800 130" width="100%" style="max-width:760px" role="img" aria-label="FCM Flow">
+          <defs>
+            <marker id="arr5" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+              <polygon points="0 0, 10 3.5, 0 7" fill="#ea580c"/>
+            </marker>
+          </defs>
+          <rect x="20" y="25" width="190" height="75" rx="10" fill="#eff6ff" stroke="#1e3a8a" stroke-width="1.5"/>
+          <text x="115" y="55" text-anchor="middle" font-weight="700" fill="#1e3a8a" font-size="13">Flutter App</text>
+          <text x="115" y="75" text-anchor="middle" fill="#475569" font-size="11">Syncs fcm_token on login</text>
+
+          <rect x="295" y="25" width="210" height="75" rx="10" fill="#0f172a"/>
+          <text x="400" y="55" text-anchor="middle" font-weight="700" fill="#ffffff" font-size="13">PHP Backend (FcmService)</text>
+          <text x="400" y="75" text-anchor="middle" fill="#94a3b8" font-size="11">Signs JWT &rarr; Google OAuth2</text>
+
+          <rect x="590" y="25" width="190" height="75" rx="10" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+          <text x="685" y="55" text-anchor="middle" font-weight="700" fill="#c2410c" font-size="13">FCM HTTP v1 API</text>
+          <text x="685" y="75" text-anchor="middle" fill="#475569" font-size="11">Delivers Push to Android</text>
+
+          <line x1="210" y1="62" x2="293" y2="62" stroke="#ea580c" stroke-width="2" marker-end="url(#arr5)"/>
+          <line x1="505" y1="62" x2="588" y2="62" stroke="#ea580c" stroke-width="2" marker-end="url(#arr5)"/>
+        </svg>
+      </div>
+
       <h2>Setup Steps</h2>
       <ol>
-        <li>Create a Firebase project and register Android app ID <code>edu.campus.campus_event_app</code>.</li>
-        <li>Download <code>google-services.json</code> into <code>campus_event_app/android/app/</code>.</li>
-        <li>Generate a Firebase Service Account JSON and place it in <code>campus_event_api/storage/firebase-service-account.json</code> (never inside <code>public/</code> or Flutter!).</li>
-        <li>Update <code>FCM_PROJECT_ID</code> and <code>FCM_SERVICE_ACCOUNT_PATH</code> in <code>campus_event_api/.env</code>.</li>
+        <li>Create a Firebase Project and register Android package <code>edu.campus.campus_event_app</code>.</li>
+        <li>Download <code>google-services.json</code> into <code>campus_event_app/android/app/google-services.json</code>.</li>
+        <li>Download Firebase Service Account JSON into <code>campus_event_api/storage/firebase-service-account.json</code> (never inside <code>public/</code> or Flutter!).</li>
+        <li>Set <code>FCM_PROJECT_ID</code> and <code>FCM_SERVICE_ACCOUNT_PATH</code> in <code>campus_event_api/.env</code>.</li>
       </ol>
       <details>
         <summary>Optional Alternatives: Firebase Auth &amp; Cloud Firestore</summary>
-        <p>In a serverless-only architecture, Firebase Auth could replace PHP sessions and Firestore could replace MySQL. We keep PHP + MySQL as our primary stack so you master relational schemas, SQL constraints, and REST API security.</p>
+        <p>Firebase Auth and Firestore are great for serverless prototypes, but are intentionally <strong>not</strong> dependencies here so beginners learn relational SQL constraints and REST API security.</p>
       </details>
     </div>
   </section>
 
-  <!-- CHAPTER 12 -->
+  <!-- ==================== CHAPTER 12 ==================== -->
   <section class="chapter" data-title="12. Testing & Debugging" data-time="40 min">
     <div class="card">
       <div class="meta-row">
@@ -454,15 +2709,32 @@ php -S 0.0.0.0:8000 -t public</code></pre></div>
         <span class="badge">Est. 40 min</span>
       </div>
       <h1>Sprint 7: Testing &amp; Debugging</h1>
-      <p><strong>Learning Objective:</strong> Run Flutter static analysis, unit/widget tests, and Postman API verification.</p>
+      <p><strong>Learning Objective:</strong> Verify models, Riverpod widgets, and API edge cases using <code>flutter test</code> and Postman.</p>
+
+      <span class="file-pill">campus_event_app/test/widget_test.dart</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>testWidgets('LoginScreen validates empty email and password', (tester) async {
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        authViewModelProvider.overrideWith(_FakeAuthViewModel.new),
+      ],
+      child: const MaterialApp(home: LoginScreen()),
+    ),
+  );
+  await tester.tap(find.text('Sign In'));
+  await tester.pump();
+  expect(find.text('Email is required'), findsOneWidget);
+  expect(find.text('Password is required'), findsOneWidget);
+});</code></pre></div>
+
       <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>cd campus_event_app
 flutter analyze
-flutter test</code></pre></div>
-      <p>Import <code>postman/campus_event_api.postman_collection.json</code> to verify 200/201 happy paths and 401/403/409/422 error paths. Full checklist: <code>docs/testing_guide.md</code>.</p>
+flutter test --concurrency=1</code></pre></div>
+      <p>Import <code>postman/campus_event_api.postman_collection.json</code> and test all positive and negative cases in <code>docs/testing_guide.md</code>.</p>
     </div>
   </section>
 
-  <!-- CHAPTER 13 -->
+  <!-- ==================== CHAPTER 13 ==================== -->
   <section class="chapter" data-title="13. Deployment" data-time="45 min">
     <div class="card">
       <div class="meta-row">
@@ -470,35 +2742,39 @@ flutter test</code></pre></div>
         <span class="badge">Est. 45 min</span>
       </div>
       <h1>Deployment: Local &amp; Production</h1>
-      <p><strong>Learning Objective:</strong> Deploy PHP + MySQL over HTTPS and build signed Android APK and AAB release artifacts.</p>
+      <p><strong>Learning Objective:</strong> Securely deploy PHP + MySQL over HTTPS and build signed Android APK and AAB release packages.</p>
       <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>cd campus_event_app
 flutter build apk --release --dart-define=API_BASE_URL=https://api.yourdomain.edu
 flutter build appbundle --release --dart-define=API_BASE_URL=https://api.yourdomain.edu</code></pre></div>
-      <p>See <code>docs/deployment_guide.md</code> for Apache/Nginx document root security, Let's Encrypt HTTPS, and Android release signing.</p>
+      <ul>
+        <li>Always point your production web server (Nginx/Apache) root to <code>campus_event_api/public/</code> only.</li>
+        <li>Always enforce HTTPS (TLS) in production so bearer tokens cannot be sniffed.</li>
+        <li>See full signing and server instructions in <code>docs/deployment_guide.md</code>.</li>
+      </ul>
     </div>
   </section>
 
-  <!-- CHAPTER 14 -->
+  <!-- ==================== CHAPTER 14 ==================== -->
   <section class="chapter" data-title="14. Final Review" data-time="20 min">
     <div class="card">
       <div class="meta-row">
         <span class="badge">Chapter 14</span>
         <span class="badge">Est. 20 min</span>
       </div>
-      <h1>Final Review &amp; Next Extensions</h1>
-      <p><strong>Congratulations!</strong> You have designed, built, tested, and prepared a production-structured Campus Event &amp; Attendance Management System.</p>
-      <h2>Completion Checklist</h2>
+      <h1>Final Review &amp; Suggested Extensions</h1>
+      <p><strong>Congratulations!</strong> You now understand how to architect, build, test, and deploy a full-stack mobile application using Flutter, Riverpod, PHP 8, MySQL, QR codes, and FCM.</p>
+      <h2>Workshop Completion Checklist</h2>
       <div class="checklist">
-        <label><input type="checkbox" /> MySQL schema imported &amp; PHP API running</label>
-        <label><input type="checkbox" /> Flutter app runs and authenticates seeded accounts</label>
-        <label><input type="checkbox" /> Duplicate registrations &amp; duplicate attendance blocked by backend</label>
-        <label><input type="checkbox" /> <code>flutter analyze</code> and <code>flutter test</code> pass</label>
+        <label><input type="checkbox" data-check="c1" /> MySQL <code>database.sql</code> imported &amp; PHP API running</label>
+        <label><input type="checkbox" data-check="c2" /> Flutter app runs with Riverpod <code>ProviderScope</code></label>
+        <label><input type="checkbox" data-check="c3" /> Duplicate registrations &amp; duplicate attendance blocked by backend</label>
+        <label><input type="checkbox" data-check="c4" /> <code>flutter analyze</code> and <code>flutter test</code> pass</label>
       </div>
-      <h2>Suggested Extensions</h2>
+      <h2>Suggested Next Extensions</h2>
       <ul>
-        <li>Build a dedicated React/Next.js or Flutter Web Admin Portal using the same <code>/api/admin/*</code> endpoints.</li>
-        <li>Add CSV/PDF export for organizer attendance reports.</li>
-        <li>Implement automated event reminder cron jobs 1 hour before <code>start_time</code>.</li>
+        <li>Build a dedicated Web Admin Portal on top of <code>/api/admin/*</code>.</li>
+        <li>Add CSV attendance report export for organizers.</li>
+        <li>Schedule automated reminder notifications 1 hour before event start.</li>
       </ul>
     </div>
   </section>
@@ -565,10 +2841,10 @@ flutter build appbundle --release --dart-define=API_BASE_URL=https://api.yourdom
     });
   });
 
-  window.addEventListener('DOMContentLoaded', () => {
-    if (window.mermaid) {
-      window.mermaid.initialize({ startOnLoad: true, theme: 'default' });
-    }
+  document.querySelectorAll('input[data-check]').forEach((cb) => {
+    const key = 'codelab_' + cb.dataset.check;
+    cb.checked = localStorage.getItem(key) === '1';
+    cb.addEventListener('change', () => localStorage.setItem(key, cb.checked ? '1' : '0'));
   });
 })();
 </script>

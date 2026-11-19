@@ -1,37 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 import '../../../core/widgets/event_card.dart';
 import '../../auth/viewmodels/auth_viewmodel.dart';
 import '../../events/viewmodels/event_viewmodel.dart';
 import '../../registrations/viewmodels/registration_viewmodel.dart';
 
-class StudentHomeTab extends StatefulWidget {
+class StudentHomeTab extends ConsumerStatefulWidget {
   const StudentHomeTab({super.key, required this.onSwitchTab});
 
   final void Function(int index) onSwitchTab;
 
   @override
-  State<StudentHomeTab> createState() => _StudentHomeTabState();
+  ConsumerState<StudentHomeTab> createState() => _StudentHomeTabState();
 }
 
-class _StudentHomeTabState extends State<StudentHomeTab> {
+class _StudentHomeTabState extends ConsumerState<StudentHomeTab> {
   @override
   void initState() {
     super.initState();
     Future.microtask(() {
       if (!mounted) return;
-      context.read<EventViewModel>().loadEvents();
-      context.read<RegistrationViewModel>().loadMyRegistrations();
+      ref.read(eventViewModelProvider.notifier).loadEvents();
+      ref.read(registrationViewModelProvider.notifier).loadMyRegistrations();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<AuthViewModel>().currentUser;
-    final eventVm = context.watch<EventViewModel>();
-    final regVm = context.watch<RegistrationViewModel>();
+    final user = ref.watch(authViewModelProvider).currentUser;
+    final eventState = ref.watch(eventViewModelProvider);
+    final regState = ref.watch(registrationViewModelProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -47,8 +47,10 @@ class _StudentHomeTabState extends State<StudentHomeTab> {
       body: RefreshIndicator(
         onRefresh: () async {
           await Future.wait([
-            eventVm.loadEvents(),
-            regVm.loadMyRegistrations(),
+            ref.read(eventViewModelProvider.notifier).loadEvents(),
+            ref
+                .read(registrationViewModelProvider.notifier)
+                .loadMyRegistrations(),
           ]);
         },
         child: ListView(
@@ -70,7 +72,7 @@ class _StudentHomeTabState extends State<StudentHomeTab> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      '${regVm.registrations.where((r) => r.registrationStatus == 'registered').length} Active Registrations',
+                      '${regState.registrations.where((r) => r.registrationStatus == 'registered').length} Active Registrations',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 22,
@@ -105,18 +107,18 @@ class _StudentHomeTabState extends State<StudentHomeTab> {
               ],
             ),
             const SizedBox(height: 8),
-            if (eventVm.isLoading && eventVm.events.isEmpty)
+            if (eventState.isLoading && eventState.events.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(32),
                 child: Center(child: CircularProgressIndicator()),
               )
-            else if (eventVm.events.isEmpty)
+            else if (eventState.events.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(24),
                 child: Center(child: Text('No upcoming events right now.')),
               )
             else
-              ...eventVm.events.take(5).map(
+              ...eventState.events.take(5).map(
                     (event) => Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: EventCard(

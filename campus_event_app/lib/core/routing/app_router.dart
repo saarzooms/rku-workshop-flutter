@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/attendance/views/attendance_report_screen.dart';
@@ -12,20 +13,31 @@ import '../../features/events/models/event_model.dart';
 import '../../features/events/views/event_detail_screen.dart';
 import '../../features/events/views/event_form_screen.dart';
 
-GoRouter buildAppRouter(AuthViewModel authVm) {
+class _RouterRefreshNotifier extends ChangeNotifier {
+  void notify() => notifyListeners();
+}
+
+final appRouterProvider = Provider<GoRouter>((ref) {
+  final refreshNotifier = _RouterRefreshNotifier();
+  ref.listen<AuthState>(authViewModelProvider, (_, _) {
+    refreshNotifier.notify();
+  });
+  ref.onDispose(refreshNotifier.dispose);
+
   return GoRouter(
     initialLocation: '/home',
-    refreshListenable: authVm,
+    refreshListenable: refreshNotifier,
     redirect: (BuildContext context, GoRouterState state) {
-      if (!authVm.isInitialized) return null;
+      final authState = ref.read(authViewModelProvider);
+      if (!authState.isInitialized) return null;
 
       final isAuthRoute = state.matchedLocation == '/login' ||
           state.matchedLocation == '/register';
 
-      if (!authVm.isAuthenticated && !isAuthRoute) {
+      if (!authState.isAuthenticated && !isAuthRoute) {
         return '/login';
       }
-      if (authVm.isAuthenticated && isAuthRoute) {
+      if (authState.isAuthenticated && isAuthRoute) {
         return '/home';
       }
       return null;
@@ -82,4 +94,4 @@ GoRouter buildAppRouter(AuthViewModel authVm) {
       ),
     ],
   );
-}
+});

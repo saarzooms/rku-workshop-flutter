@@ -1,54 +1,98 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/api_exception.dart';
+import '../../../core/providers/core_providers.dart';
 import '../models/user_model.dart';
 import '../repositories/auth_repository.dart';
+import '../services/auth_service.dart';
 
-class AuthViewModel extends ChangeNotifier {
-  AuthViewModel(this._repository);
+class AuthState {
+  const AuthState({
+    this.currentUser,
+    this.isLoading = false,
+    this.isInitialized = false,
+    this.errorMessage,
+  });
 
-  final AuthRepository _repository;
+  final UserModel? currentUser;
+  final bool isLoading;
+  final bool isInitialized;
+  final String? errorMessage;
 
-  UserModel? _currentUser;
-  bool _isLoading = false;
-  bool _isInitialized = false;
-  String? _errorMessage;
+  bool get isAuthenticated => currentUser != null;
 
-  UserModel? get currentUser => _currentUser;
-  bool get isAuthenticated => _currentUser != null;
-  bool get isLoading => _isLoading;
-  bool get isInitialized => _isInitialized;
-  String? get errorMessage => _errorMessage;
+  AuthState copyWith({
+    UserModel? currentUser,
+    bool clearUser = false,
+    bool? isLoading,
+    bool? isInitialized,
+    String? errorMessage,
+    bool clearError = false,
+  }) {
+    return AuthState(
+      currentUser: clearUser ? null : (currentUser ?? this.currentUser),
+      isLoading: isLoading ?? this.isLoading,
+      isInitialized: isInitialized ?? this.isInitialized,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+    );
+  }
+}
+
+final authRepositoryProvider = Provider<AuthRepository>((ref) {
+  final apiClient = ref.watch(apiClientProvider);
+  return AuthRepository(apiClient, AuthService(apiClient));
+});
+
+final authViewModelProvider =
+    NotifierProvider<AuthViewModel, AuthState>(AuthViewModel.new);
+
+class AuthViewModel extends Notifier<AuthState> {
+  @override
+  AuthState build() {
+    Future.microtask(initialize);
+    return const AuthState(isLoading: true);
+  }
+
+  AuthRepository get _repository => ref.read(authRepositoryProvider);
 
   Future<void> initialize() async {
-    _isLoading = true;
-    notifyListeners();
+    state = state.copyWith(isLoading: true, clearError: true);
     try {
-      _currentUser = await _repository.restoreSession();
-    } finally {
-      _isLoading = false;
-      _isInitialized = true;
-      notifyListeners();
+      final user = await _repository.restoreSession();
+      state = state.copyWith(
+        currentUser: user,
+        clearUser: user == null,
+        isLoading: false,
+        isInitialized: true,
+      );
+    } catch (_) {
+      state = state.copyWith(
+        clearUser: true,
+        isLoading: false,
+        isInitialized: true,
+      );
     }
   }
 
   Future<bool> login(String email, String password) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
+    state = state.copyWith(isLoading: true, clearError: true);
     try {
-      _currentUser = await _repository.login(email, password);
+      final user = await _repository.login(email, password);
+      state = state.copyWith(
+        currentUser: user,
+        isLoading: false,
+        isInitialized: true,
+      );
       return true;
     } on ApiException catch (e) {
-      _errorMessage = e.message;
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
       return false;
     } catch (_) {
-      _errorMessage = 'Unexpected error occurred during login.';
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Unexpected error occurred during login.',
+      );
       return false;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
     }
   }
 
@@ -59,45 +103,43 @@ class AuthViewModel extends ChangeNotifier {
     String? studentIdNumber,
     String? department,
   }) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
+    state = state.copyWith(isLoading: true, clearError: true);
     try {
-      _currentUser = await _repository.register(
+      final user = await _repository.register(
         fullName: fullName,
         email: email,
         password: password,
         studentIdNumber: studentIdNumber,
         department: department,
       );
+      state = state.copyWith(
+        currentUser: user,
+        isLoading: false,
+        isInitialized: true,
+      );
       return true;
     } on ApiException catch (e) {
-      _errorMessage = e.message;
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
       return false;
     } catch (_) {
-      _errorMessage = 'Unexpected error occurred during registration.';
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Unexpected error occurred during registration.',
+      );
       return false;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
     }
   }
 
   void updateUser(UserModel user) {
-    _currentUser = user;
-    notifyListeners();
+    state = state.copyWith(currentUser: user);
   }
 
   Future<void> logout() async {
-    _isLoading = true;
-    notifyListeners();
+    state = state.copyWith(isLoading: true);
     try {
       await _repository.logout();
-      _currentUser = null;
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      state = state.copyWith(clearUser: true, isLoading: false);
     }
   }
 }
