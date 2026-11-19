@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/attendance/views/attendance_report_screen.dart';
+import '../../features/attendance/views/qr_generate_screen.dart';
+import '../../features/attendance/views/qr_scan_screen.dart';
 import '../../features/auth/viewmodels/auth_viewmodel.dart';
 import '../../features/auth/views/login_screen.dart';
 import '../../features/auth/views/register_screen.dart';
@@ -72,30 +75,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/attendance/scan',
-        builder: (_, _) => Scaffold(
-          appBar: AppBar(title: const Text('QR Scanner')),
-          body: const Center(
-            child: Text('QR Scanner is implemented in Sprint 5 Checkpoint.'),
-          ),
-        ),
+        builder: (_, _) => const QrScanScreen(),
       ),
       GoRoute(
         path: '/attendance/qr/:id',
-        builder: (_, _) => Scaffold(
-          appBar: AppBar(title: const Text('QR Generator')),
-          body: const Center(
-            child: Text('QR Ticket Generator is implemented in Sprint 5 Checkpoint.'),
-          ),
-        ),
+        builder: (_, state) {
+          final id = int.parse(state.pathParameters['id']!);
+          final event = state.extra as EventModel?;
+          return QrGenerateScreen(eventId: id, eventTitle: event?.title);
+        },
       ),
       GoRoute(
         path: '/attendance/report/:id',
-        builder: (_, _) => Scaffold(
-          appBar: AppBar(title: const Text('Attendance Report')),
-          body: const Center(
-            child: Text('Attendance Report is implemented in Sprint 5 Checkpoint.'),
-          ),
-        ),
+        builder: (_, state) {
+          final id = int.parse(state.pathParameters['id']!);
+          return AttendanceReportScreen(eventId: id);
+        },
       ),
     ],
   );
