@@ -146,6 +146,69 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           : () => context.push('/register'),
                       child: const Text("Don't have an account? Register"),
                     ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(child: Divider(color: Colors.grey.shade300)),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text(
+                            'EXPLORE UI PREVIEWS',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.1,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ),
+                        Expanded(child: Divider(color: Colors.grey.shade300)),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Jump directly to any role layout to inspect screen designs:',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        ActionChip(
+                          avatar: const Icon(Icons.school, size: 18),
+                          label: const Text('Student View'),
+                          onPressed: () {
+                            ref
+                                .read(authViewModelProvider.notifier)
+                                .loginAsRole('student');
+                            context.go('/home');
+                          },
+                        ),
+                        ActionChip(
+                          avatar: const Icon(Icons.event_available, size: 18),
+                          label: const Text('Organizer View'),
+                          onPressed: () {
+                            ref
+                                .read(authViewModelProvider.notifier)
+                                .loginAsRole('organizer');
+                            context.go('/home');
+                          },
+                        ),
+                        ActionChip(
+                          avatar: const Icon(Icons.admin_panel_settings, size: 18),
+                          label: const Text('Admin View'),
+                          onPressed: () {
+                            ref
+                                .read(authViewModelProvider.notifier)
+                                .loginAsRole('admin');
+                            context.go('/home');
+                          },
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),

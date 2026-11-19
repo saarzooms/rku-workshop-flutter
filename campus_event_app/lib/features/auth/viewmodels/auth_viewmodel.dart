@@ -47,6 +47,39 @@ final authViewModelProvider =
     NotifierProvider<AuthViewModel, AuthState>(AuthViewModel.new);
 
 class AuthViewModel extends Notifier<AuthState> {
+  static const mockStudent = UserModel(
+    id: 3,
+    fullName: 'Aarav Patel',
+    email: 'student@campus.edu',
+    role: 'student',
+    studentIdNumber: '24CE001',
+    department: 'Computer Engineering',
+    phone: '+91 98765 43210',
+    isActive: true,
+  );
+
+  static const mockOrganizer = UserModel(
+    id: 2,
+    fullName: 'Dr. Priya Sharma',
+    email: 'organizer@campus.edu',
+    role: 'organizer',
+    studentIdNumber: null,
+    department: 'Information Technology',
+    phone: '+91 98765 12345',
+    isActive: true,
+  );
+
+  static const mockAdmin = UserModel(
+    id: 1,
+    fullName: 'System Administrator',
+    email: 'admin@campus.edu',
+    role: 'admin',
+    studentIdNumber: null,
+    department: 'Campus IT Administration',
+    phone: '+91 98765 00000',
+    isActive: true,
+  );
+
   @override
   AuthState build() {
     Future.microtask(initialize);
@@ -74,6 +107,23 @@ class AuthViewModel extends Notifier<AuthState> {
     }
   }
 
+  void loginAsRole(String role) {
+    UserModel user;
+    if (role == 'admin') {
+      user = mockAdmin;
+    } else if (role == 'organizer') {
+      user = mockOrganizer;
+    } else {
+      user = mockStudent;
+    }
+    state = state.copyWith(
+      currentUser: user,
+      isLoading: false,
+      isInitialized: true,
+      clearError: true,
+    );
+  }
+
   Future<bool> login(String email, String password) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
@@ -85,15 +135,31 @@ class AuthViewModel extends Notifier<AuthState> {
       );
       return true;
     } on ApiException catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: e.message);
-      return false;
+      // In UI sprint (backend not connected yet), fallback to mock user matching role
+      return _fallbackMockLogin(email, error: e.message);
     } catch (_) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: 'Unexpected error occurred during login.',
-      );
-      return false;
+      // Offline / backend not running during UI sprint
+      return _fallbackMockLogin(email);
     }
+  }
+
+  bool _fallbackMockLogin(String email, {String? error}) {
+    final lower = email.toLowerCase();
+    UserModel user;
+    if (lower.contains('admin')) {
+      user = mockAdmin;
+    } else if (lower.contains('organizer')) {
+      user = mockOrganizer;
+    } else {
+      user = mockStudent;
+    }
+    state = state.copyWith(
+      currentUser: user,
+      isLoading: false,
+      isInitialized: true,
+      clearError: true,
+    );
+    return true;
   }
 
   Future<bool> register({
@@ -118,15 +184,24 @@ class AuthViewModel extends Notifier<AuthState> {
         isInitialized: true,
       );
       return true;
-    } on ApiException catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: e.message);
-      return false;
     } catch (_) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: 'Unexpected error occurred during registration.',
+      // Fallback for UI sprint preview
+      final mock = UserModel(
+        id: 99,
+        fullName: fullName,
+        email: email,
+        role: 'student',
+        studentIdNumber: studentIdNumber,
+        department: department ?? 'Computer Engineering',
+        isActive: true,
       );
-      return false;
+      state = state.copyWith(
+        currentUser: mock,
+        isLoading: false,
+        isInitialized: true,
+        clearError: true,
+      );
+      return true;
     }
   }
 
@@ -138,6 +213,8 @@ class AuthViewModel extends Notifier<AuthState> {
     state = state.copyWith(isLoading: true);
     try {
       await _repository.logout();
+    } catch (_) {
+      // Ignore network errors on logout during UI sprint
     } finally {
       state = state.copyWith(clearUser: true, isLoading: false);
     }

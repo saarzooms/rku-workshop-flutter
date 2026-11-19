@@ -23,6 +23,28 @@ class UserModel {
   bool get isOrganizer => role == 'organizer';
   bool get isAdmin => role == 'admin';
 
+  UserModel copyWith({
+    int? id,
+    String? fullName,
+    String? email,
+    String? role,
+    String? studentIdNumber,
+    String? department,
+    String? phone,
+    bool? isActive,
+  }) {
+    return UserModel(
+      id: id ?? this.id,
+      fullName: fullName ?? this.fullName,
+      email: email ?? this.email,
+      role: role ?? this.role,
+      studentIdNumber: studentIdNumber ?? this.studentIdNumber,
+      department: department ?? this.department,
+      phone: phone ?? this.phone,
+      isActive: isActive ?? this.isActive,
+    );
+  }
+
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: int.parse(json['id'].toString()),
