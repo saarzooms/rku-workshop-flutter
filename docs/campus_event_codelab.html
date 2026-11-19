@@ -783,6 +783,58 @@ mysql --version</code></pre></div>
         <li><code>fix/&lt;bug-name&gt;</code>: Focused patch branches resolving QA or testing failures.</li>
       </ul>
 
+      <h3>D. Workshop Git Checkpoint Branches (Beginner Learning Path)</h3>
+      <p>To help beginners inspect, run, and experiment with code at each sprint milestone, this repository maintains dedicated checkpoint branches. If you ever get stuck or want to jump straight to a specific sprint checkpoint, you can run:</p>
+      <div class="table-wrap">
+        <table>
+          <tr>
+            <th>Sprint</th>
+            <th>Git Branch Name</th>
+            <th>What's Included at This Checkpoint</th>
+          </tr>
+          <tr>
+            <td>Sprint 0</td>
+            <td><code>git checkout 01-planning-and-design</code></td>
+            <td>SRS documentation, system architecture, database ER design, agile backlog, and CI workflows. <em>(No code yet)</em></td>
+          </tr>
+          <tr>
+            <td>Sprint 1 (Part A)</td>
+            <td><code>git checkout 02-flutter-setup</code></td>
+            <td>Flutter 3 project scaffold, Riverpod <code>ProviderScope</code>, AppTheme, initial routing, and widget smoke tests.</td>
+          </tr>
+          <tr>
+            <td>Sprint 1 (Part B)</td>
+            <td><code>git checkout 03-application-ui</code></td>
+            <td>Complete application UI: Login, Register, HomeShell, role tabs (Student/Organizer/Admin), Event forms/details, Registrations, Profile.</td>
+          </tr>
+          <tr>
+            <td>Sprint 2</td>
+            <td><code>git checkout 04-php-backend</code></td>
+            <td>PHP 8 REST API, MySQL <code>database.sql</code>, Bearer token middleware, PDO repositories, controllers, Postman collection.</td>
+          </tr>
+          <tr>
+            <td>Sprints 3 &amp; 4</td>
+            <td><code>git checkout 05-flutter-php-integration</code></td>
+            <td>Full-stack Riverpod wiring: ApiClient, AuthViewModel, EventViewModel, RegistrationViewModel, and live PHP/MySQL data flows.</td>
+          </tr>
+          <tr>
+            <td>Sprint 5</td>
+            <td><code>git checkout 06-qr-attendance</code></td>
+            <td>QR ticket generator (<code>qr_flutter</code>), camera QR check-in scanner (<code>mobile_scanner</code>), attendance audit reports.</td>
+          </tr>
+          <tr>
+            <td>Sprint 6</td>
+            <td><code>git checkout 07-push-notifications</code></td>
+            <td>Firebase Cloud Messaging (FCM) push notification service, device token synchronization, automated event alerts.</td>
+          </tr>
+          <tr>
+            <td>Production</td>
+            <td><code>git checkout master</code></td>
+            <td>The complete codebase with automated GitHub Actions CI/CD workflows, unit/widget tests, and interactive HTML codelab.</td>
+          </tr>
+        </table>
+      </div>
+
       <h2>Checkpoint</h2>
       <ol>
         <li>Why did we schedule <strong>Event Registration (Sprint 4)</strong> before <strong>QR Attendance (Sprint 5)</strong>?</li>
@@ -809,7 +861,7 @@ mysql --version</code></pre></div>
       <h1>Sprint 1: Create Flutter Project, Folder Structure, Riverpod &amp; Theme</h1>
       <p><strong>Learning Objective:</strong> Create <code>campus_event_app</code>, generate the complete feature-based MVVM folder structure via CLI commands, install all required packages, and configure Material 3 theming with Riverpod.</p>
 
-      <div class="callout"><strong>Previous State:</strong> Design documents and architecture diagrams are ready. <strong>What Will Change:</strong> We create the runnable Flutter project skeleton with clean folders so we never dump all code into <code>main.dart</code>.</div>
+      <div class="callout"><strong>Git Branch Checkpoint:</strong> <code>git checkout 02-flutter-setup</code> | <strong>Previous State:</strong> Sprint 0 design documents and architecture diagrams are ready. <strong>What Will Change:</strong> We create the runnable Flutter project skeleton with clean feature folders, Riverpod <code>ProviderScope</code>, AppTheme, and basic router so we never dump all code into <code>main.dart</code>.</div>
 
       <h2>Step 1: Create Project &amp; Install Dependencies</h2>
       <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>flutter create --org edu.campus --project-name campus_event_app campus_event_app
@@ -995,6 +1047,8 @@ class CampusEventApp extends ConsumerWidget {
       </div>
       <h1>Build the Application UI &amp; Role-Based Navigation</h1>
       <p><strong>Learning Objective:</strong> Design consistent Material 3 screens, build reusable UI widgets (<code>EventCard</code>, <code>StateViews</code>), implement form validation in <code>LoginScreen</code> and <code>RegisterScreen</code>, and configure role-adaptive navigation with <code>HomeShell</code> and <code>GoRouter</code>.</p>
+
+      <div class="callout"><strong>Git Branch Checkpoint:</strong> <code>git checkout 03-application-ui</code> | <strong>Previous State:</strong> Flutter project skeleton and AppTheme are in place. <strong>What Will Change:</strong> We build the complete UI screens, forms, role-based navigation tabs, and reusable component widgets.</div>
 
       <h2>1. Expected Screen Layouts (Visual Reference)</h2>
       <div class="diagram-box">
@@ -1451,6 +1505,8 @@ class _HomeShellState extends ConsumerState&lt;HomeShell&gt; {
       </div>
       <h1>Sprint 2: Build the PHP 8 REST API &amp; MySQL Database</h1>
       <p><strong>Learning Objective:</strong> Build a clean, secure, framework-free PHP 8 REST API from scratch. You will understand directory isolation (exposing only <code>public/</code>), environment parsing, PDO database connection, consistent JSON responses, regular expression routing, role-based authorization middleware, and complete Controller + Repository implementations.</p>
+
+      <div class="callout"><strong>Git Branch Checkpoint:</strong> <code>git checkout 04-php-backend</code> | <strong>Previous State:</strong> Mobile UI is built. <strong>What Will Change:</strong> We build the complete PHP 8 REST API and MySQL database schema to power our campus platform.</div>
 
       <h2>1. Backend Architecture &amp; Request Lifecycle</h2>
       <div class="diagram-box">
@@ -2134,6 +2190,8 @@ curl http://localhost:8000/api/events</code></pre></div>
       <h1>Sprints 3 &amp; 4: Integrate Flutter (Riverpod) with PHP</h1>
       <p><strong>Learning Objective:</strong> Connect the Flutter frontend to the PHP REST API end-to-end. You will implement typed network communication (<code>ApiClient</code>, <code>ApiException</code>), domain models (<code>EventModel</code>, <code>RegistrationModel</code>), API services, data repositories, Riverpod ViewModels, and responsive UI screens (Event List, Event Details, Event Form, and My Registrations).</p>
 
+      <div class="callout"><strong>Git Branch Checkpoint:</strong> <code>git checkout 05-flutter-php-integration</code> | <strong>Previous State:</strong> PHP backend and Flutter UI are built independently. <strong>What Will Change:</strong> We integrate Flutter Riverpod with PHP 8 REST API for dynamic, end-to-end event discovery, creation, and registrations.</div>
+
       <h2>1. The End-to-End Request &amp; Response Flow</h2>
       <div class="diagram-box">
         <svg viewBox="0 0 820 185" width="100%" style="max-width:780px" role="img" aria-label="End to End Data Flow Diagram">
@@ -2604,6 +2662,8 @@ if (isOwnerOrAdmin) ...[
       <h1>Sprint 5: Secure QR Code Attendance Workflow</h1>
       <p><strong>Learning Objective:</strong> Implement time-limited QR generation and 5-step server-side attendance verification.</p>
 
+      <div class="callout"><strong>Git Branch Checkpoint:</strong> <code>git checkout 06-qr-attendance</code> | <strong>Previous State:</strong> Events and registrations are fully connected. <strong>What Will Change:</strong> We add QR code ticket generation, mobile camera check-in scanning via <code>mobile_scanner</code>, and server-side verification.</div>
+
       <div class="diagram-box">
         <svg viewBox="0 0 800 185" width="100%" style="max-width:760px" role="img" aria-label="QR Attendance Security Flow">
           <defs>
@@ -2662,6 +2722,8 @@ if ($attRepo-&gt;findByRegistrationId((int) $registration['id']) !== null) {
       </div>
       <h1>Sprint 6: Firebase Cloud Messaging (FCM HTTP v1)</h1>
       <p><strong>Learning Objective:</strong> Register Android FCM device tokens with PHP and send event notifications from the backend using OAuth2 service accounts.</p>
+
+      <div class="callout"><strong>Git Branch Checkpoint:</strong> <code>git checkout 07-push-notifications</code> | <strong>Previous State:</strong> QR attendance is verified. <strong>What Will Change:</strong> We integrate Firebase Cloud Messaging (FCM) to deliver real-time push alerts and reminders to Android devices.</div>
 
       <div class="diagram-box">
         <svg viewBox="0 0 800 130" width="100%" style="max-width:760px" role="img" aria-label="FCM Flow">
