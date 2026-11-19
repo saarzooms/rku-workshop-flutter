@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../core/providers/core_providers.dart';
 import '../../auth/viewmodels/auth_viewmodel.dart';
 import '../../events/views/event_list_screen.dart';
 import '../../profile/views/profile_screen.dart';
@@ -21,6 +24,22 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   @override
   void initState() {
     super.initState();
+    Future.microtask(() {
+      if (!mounted) return;
+      ref.read(fcmServiceProvider).initialize(
+        onForegroundMessage: (title, body) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('$title: $body')),
+          );
+        },
+        onNotificationTap: (eventId) {
+          if (mounted && eventId != null) {
+            context.push('/events/$eventId');
+          }
+        },
+      );
+    });
   }
 
   @override
