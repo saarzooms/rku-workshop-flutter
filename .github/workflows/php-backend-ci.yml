@@ -1,0 +1,64 @@
+name: PHP Backend CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'campus_event_api/**'
+      - '.github/workflows/php-backend-ci.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'campus_event_api/**'
+      - '.github/workflows/php-backend-ci.yml'
+
+jobs:
+  php_checks:
+    name: PHP Lint, Autoload & Database Test
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: rootpassword
+          MYSQL_DATABASE: campus_event_db
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=5
+
+    defaults:
+      run:
+        working-directory: campus_event_api
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up PHP Environment
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo, pdo_mysql, json, openssl, curl
+          coverage: none
+
+      - name: Install Composer Dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: PHP Syntax Check (Lint)
+        run: |
+          find app public routes -name "*.php" -print0 | xargs -0 -n1 php -l
+
+      - name: Import MySQL Database Schema & Seeds
+        run: |
+          mysql -h 127.0.0.1 -P 3306 -u root -prootpassword campus_event_db < database/database.sql
+
+      - name: Verify Seeded Records in Database
+        run: |
+          mysql -h 127.0.0.1 -P 3306 -u root -prootpassword campus_event_db -e "SELECT count(*) AS total_users FROM users; SELECT count(*) AS total_events FROM events;"
+
+      - name: Start Built-in PHP Development Server & Run Health Check
+        run: |
+          php -S 127.0.0.1:8000 -t public > /dev/null 2>&1 &
+          sleep 2
+          curl -f http://127.0.0.1:8000/api/health || exit 1

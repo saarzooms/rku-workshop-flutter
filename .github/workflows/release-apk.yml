@@ -1,0 +1,68 @@
+name: Build Android Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      build_aab:
+        description: 'Build Android App Bundle (.aab) for Google Play'
+        required: true
+        type: boolean
+        default: true
+      api_base_url:
+        description: 'Production API Base URL'
+        required: true
+        default: 'https://campus-events-api.youruniversity.edu'
+
+jobs:
+  build_release:
+    name: Build Android Release Artifacts
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: campus_event_app
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Java Development Kit (JDK 17)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter Environment
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.2'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build Standalone Release APK
+        run: |
+          flutter build apk --release --dart-define=API_BASE_URL=${{ github.event.inputs.api_base_url || 'https://campus-events-api.youruniversity.edu' }}
+
+      - name: Build Release App Bundle (AAB for Play Store)
+        if: ${{ github.event.inputs.build_aab != false }}
+        run: |
+          flutter build appbundle --release --dart-define=API_BASE_URL=${{ github.event.inputs.api_base_url || 'https://campus-events-api.youruniversity.edu' }}
+
+      - name: Upload Release APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: campus-event-release-apk
+          path: campus_event_app/build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Upload Release AAB Artifact
+        if: ${{ github.event.inputs.build_aab != false }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: campus-event-release-bundle
+          path: campus_event_app/build/app/outputs/bundle/release/app-release.aab
