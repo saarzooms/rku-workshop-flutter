@@ -1,16 +1,55 @@
-# campus_event_app
+# Campus Event & Attendance System (Flutter + Riverpod Client)
 
-A new Flutter project.
+Production-grade cross-platform mobile & web client built with **Flutter 3.x** and **Riverpod** state management, communicating with the PHP 8 REST API and MySQL database.
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## 🚀 Checkpoint: Sprints 3 & 4 (Full-Stack Integration)
 
-A few resources to get you started if this is your first Flutter project:
+At this checkpoint, the client is fully wired to the backend API:
+- **Authentication**: JWT/Bearer Token handling stored via `flutter_secure_storage`
+- **State Management**: Reactive `Notifier` & `AsyncNotifier` with Riverpod
+- **Event Management**: Live event feeds, detail screens, search & filter, event creation
+- **Registrations**: One-click RSVP, capacity enforcement, cancellation, and ticket listings
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🛠️ Running the Application
+
+### 1. Ensure Backend is Running
+In a separate terminal:
+```bash
+cd campus_event_api
+php -S 127.0.0.1:8000 -t public
+```
+
+### 2. Run Flutter App
+- **Android Emulator**:
+  ```bash
+  flutter run
+  ```
+  *(Default base URL automatically points to `http://10.0.2.2:8000`)*
+
+- **Chrome / Web**:
+  ```bash
+  flutter run -d chrome
+  ```
+
+- **Physical Android Device**:
+  ```bash
+  flutter run --dart-define=API_BASE_URL=http://<YOUR_PC_LAN_IP>:8000
+  ```
+
+---
+
+## 🧪 Testing
+
+Run test suite:
+```bash
+flutter test --concurrency=1
+```
+
+Run static analysis:
+```bash
+flutter analyze
+```
