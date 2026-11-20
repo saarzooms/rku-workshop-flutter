@@ -783,6 +783,58 @@ mysql --version</code></pre></div>
         <li><code>fix/&lt;bug-name&gt;</code>: Focused patch branches resolving QA or testing failures.</li>
       </ul>
 
+      <h3>D. Workshop Git Checkpoint Branches (Beginner Learning Path)</h3>
+      <p>To help beginners inspect, run, and experiment with code at each sprint milestone, this repository maintains dedicated checkpoint branches. If you ever get stuck or want to jump straight to a specific sprint checkpoint, you can run:</p>
+      <div class="table-wrap">
+        <table>
+          <tr>
+            <th>Sprint</th>
+            <th>Git Branch Name</th>
+            <th>What's Included at This Checkpoint</th>
+          </tr>
+          <tr>
+            <td>Sprint 0</td>
+            <td><code>git checkout 01-planning-and-design</code></td>
+            <td>SRS documentation, system architecture, database ER design, agile backlog, and CI workflows. <em>(No code yet)</em></td>
+          </tr>
+          <tr>
+            <td>Sprint 1 (Part A)</td>
+            <td><code>git checkout 02-flutter-setup</code></td>
+            <td>Flutter 3 project scaffold, Riverpod <code>ProviderScope</code>, AppTheme, initial routing, and widget smoke tests.</td>
+          </tr>
+          <tr>
+            <td>Sprint 1 (Part B)</td>
+            <td><code>git checkout 03-application-ui</code></td>
+            <td>Complete application UI: Login, Register, HomeShell, role tabs (Student/Organizer/Admin), Event forms/details, Registrations, Profile.</td>
+          </tr>
+          <tr>
+            <td>Sprint 2</td>
+            <td><code>git checkout 04-php-backend</code></td>
+            <td>PHP 8 REST API, MySQL <code>database.sql</code>, Bearer token middleware, PDO repositories, controllers, Postman collection.</td>
+          </tr>
+          <tr>
+            <td>Sprints 3 &amp; 4</td>
+            <td><code>git checkout 05-flutter-php-integration</code></td>
+            <td>Full-stack Riverpod wiring: ApiClient, AuthViewModel, EventViewModel, RegistrationViewModel, and live PHP/MySQL data flows.</td>
+          </tr>
+          <tr>
+            <td>Sprint 5</td>
+            <td><code>git checkout 06-qr-attendance</code></td>
+            <td>QR ticket generator (<code>qr_flutter</code>), camera QR check-in scanner (<code>mobile_scanner</code>), attendance audit reports.</td>
+          </tr>
+          <tr>
+            <td>Sprint 6</td>
+            <td><code>git checkout 07-push-notifications</code></td>
+            <td>Firebase Cloud Messaging (FCM) push notification service, device token synchronization, automated event alerts.</td>
+          </tr>
+          <tr>
+            <td>Production</td>
+            <td><code>git checkout master</code></td>
+            <td>The complete codebase with automated GitHub Actions CI/CD workflows, unit/widget tests, and interactive HTML codelab.</td>
+          </tr>
+        </table>
+      </div>
+
       <h2>Checkpoint</h2>
       <ol>
         <li>Why did we schedule <strong>Event Registration (Sprint 4)</strong> before <strong>QR Attendance (Sprint 5)</strong>?</li>
@@ -809,7 +861,7 @@ mysql --version</code></pre></div>
       <h1>Sprint 1: Create Flutter Project, Folder Structure, Riverpod &amp; Theme</h1>
       <p><strong>Learning Objective:</strong> Create <code>campus_event_app</code>, generate the complete feature-based MVVM folder structure via CLI commands, install all required packages, and configure Material 3 theming with Riverpod.</p>
 
-      <div class="callout"><strong>Previous State:</strong> Design documents and architecture diagrams are ready. <strong>What Will Change:</strong> We create the runnable Flutter project skeleton with clean folders so we never dump all code into <code>main.dart</code>.</div>
+      <div class="callout"><strong>Git Branch Checkpoint:</strong> <code>git checkout 02-flutter-setup</code> | <strong>Previous State:</strong> Sprint 0 design documents and architecture diagrams are ready. <strong>What Will Change:</strong> We create the runnable Flutter project skeleton with clean feature folders, Riverpod <code>ProviderScope</code>, AppTheme, and basic router so we never dump all code into <code>main.dart</code>.</div>
 
       <h2>Step 1: Create Project &amp; Install Dependencies</h2>
       <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>flutter create --org edu.campus --project-name campus_event_app campus_event_app
@@ -995,6 +1047,8 @@ class CampusEventApp extends ConsumerWidget {
       </div>
       <h1>Build the Application UI &amp; Role-Based Navigation</h1>
       <p><strong>Learning Objective:</strong> Design consistent Material 3 screens, build reusable UI widgets (<code>EventCard</code>, <code>StateViews</code>), implement form validation in <code>LoginScreen</code> and <code>RegisterScreen</code>, and configure role-adaptive navigation with <code>HomeShell</code> and <code>GoRouter</code>.</p>
+
+      <div class="callout"><strong>Git Branch Checkpoint:</strong> <code>git checkout 03-application-ui</code> | <strong>Previous State:</strong> Flutter project skeleton and AppTheme are in place. <strong>What Will Change:</strong> We build the complete UI screens, forms, role-based navigation tabs, and reusable component widgets.</div>
 
       <h2>1. Expected Screen Layouts (Visual Reference)</h2>
       <div class="diagram-box">
@@ -1451,6 +1505,8 @@ class _HomeShellState extends ConsumerState&lt;HomeShell&gt; {
       </div>
       <h1>Sprint 2: Build the PHP 8 REST API &amp; MySQL Database</h1>
       <p><strong>Learning Objective:</strong> Build a clean, secure, framework-free PHP 8 REST API from scratch. You will understand directory isolation (exposing only <code>public/</code>), environment parsing, PDO database connection, consistent JSON responses, regular expression routing, role-based authorization middleware, and complete Controller + Repository implementations.</p>
+
+      <div class="callout"><strong>Git Branch Checkpoint:</strong> <code>git checkout 04-php-backend</code> | <strong>Previous State:</strong> Mobile UI is built. <strong>What Will Change:</strong> We build the complete PHP 8 REST API and MySQL database schema to power our campus platform.</div>
 
       <h2>1. Backend Architecture &amp; Request Lifecycle</h2>
       <div class="diagram-box">
@@ -2134,6 +2190,8 @@ curl http://localhost:8000/api/events</code></pre></div>
       <h1>Sprints 3 &amp; 4: Integrate Flutter (Riverpod) with PHP</h1>
       <p><strong>Learning Objective:</strong> Connect the Flutter frontend to the PHP REST API end-to-end. You will implement typed network communication (<code>ApiClient</code>, <code>ApiException</code>), domain models (<code>EventModel</code>, <code>RegistrationModel</code>), API services, data repositories, Riverpod ViewModels, and responsive UI screens (Event List, Event Details, Event Form, and My Registrations).</p>
 
+      <div class="callout"><strong>Git Branch Checkpoint:</strong> <code>git checkout 05-flutter-php-integration</code> | <strong>Previous State:</strong> PHP backend and Flutter UI are built independently. <strong>What Will Change:</strong> We integrate Flutter Riverpod with PHP 8 REST API for dynamic, end-to-end event discovery, creation, and registrations.</div>
+
       <h2>1. The End-to-End Request &amp; Response Flow</h2>
       <div class="diagram-box">
         <svg viewBox="0 0 820 185" width="100%" style="max-width:780px" role="img" aria-label="End to End Data Flow Diagram">
@@ -2604,6 +2662,8 @@ if (isOwnerOrAdmin) ...[
       <h1>Sprint 5: Secure QR Code Attendance Workflow</h1>
       <p><strong>Learning Objective:</strong> Implement time-limited QR generation and 5-step server-side attendance verification.</p>
 
+      <div class="callout"><strong>Git Branch Checkpoint:</strong> <code>git checkout 06-qr-attendance</code> | <strong>Previous State:</strong> Events and registrations are fully connected. <strong>What Will Change:</strong> We add QR code ticket generation, mobile camera check-in scanning via <code>mobile_scanner</code>, and server-side verification.</div>
+
       <div class="diagram-box">
         <svg viewBox="0 0 800 185" width="100%" style="max-width:760px" role="img" aria-label="QR Attendance Security Flow">
           <defs>
@@ -2663,6 +2723,8 @@ if ($attRepo-&gt;findByRegistrationId((int) $registration['id']) !== null) {
       <h1>Sprint 6: Firebase Cloud Messaging (FCM HTTP v1)</h1>
       <p><strong>Learning Objective:</strong> Register Android FCM device tokens with PHP and send event notifications from the backend using OAuth2 service accounts.</p>
 
+      <div class="callout"><strong>Git Branch Checkpoint:</strong> <code>git checkout 07-push-notifications</code> | <strong>Previous State:</strong> QR attendance is verified. <strong>What Will Change:</strong> We integrate Firebase Cloud Messaging (FCM) to deliver real-time push alerts and reminders to Android devices.</div>
+
       <div class="diagram-box">
         <svg viewBox="0 0 800 130" width="100%" style="max-width:760px" role="img" aria-label="FCM Flow">
           <defs>
@@ -2702,35 +2764,350 @@ if ($attRepo-&gt;findByRegistrationId((int) $registration['id']) !== null) {
   </section>
 
   <!-- ==================== CHAPTER 12 ==================== -->
-  <section class="chapter" data-title="12. Testing & Debugging" data-time="40 min">
+  <section class="chapter" data-title="12. Testing & Debugging" data-time="50 min">
     <div class="card">
       <div class="meta-row">
         <span class="badge">Chapter 12</span>
-        <span class="badge">Est. 40 min</span>
+        <span class="badge">Est. 50 min</span>
+        <span class="badge teal">Sprint 7: Full-Stack Testing &amp; Verification</span>
       </div>
-      <h1>Sprint 7: Testing &amp; Debugging</h1>
-      <p><strong>Learning Objective:</strong> Verify models, Riverpod widgets, and API edge cases using <code>flutter test</code> and Postman.</p>
+      <h1>Sprint 7: Comprehensive Testing Across Different Scenarios</h1>
+      <p><strong>Learning Objective:</strong> Master full-stack test automation across the entire test pyramid. Learn how to write unit tests for domain models, test Riverpod ViewModels in isolation, test Flutter UI widgets and form validation using <code>WidgetTester</code>, and assert backend API status codes and business rule edge cases.</p>
+
+      <h2>1. The Test Pyramid &amp; The AAA Pattern</h2>
+      <p>In production applications, testing is structured hierarchically. The bulk of tests should be fast, isolated unit tests, followed by widget tests that verify UI interactions, and integration tests that verify end-to-end API contracts:</p>
+
+      <div class="diagram-box">
+        <svg viewBox="0 0 800 240" width="100%" style="max-width:780px" role="img" aria-label="Testing Pyramid and AAA Pattern">
+          <defs>
+            <marker id="arrTest" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+              <polygon points="0 0, 10 3.5, 0 7" fill="#1e3a8a"/>
+            </marker>
+          </defs>
+          <!-- Pyramid Tiers -->
+          <polygon points="180,30 290,190 70,190" fill="#e0e7ff" stroke="#3b82f6" stroke-width="2"/>
+          <line x1="105" y1="140" x2="255" y2="140" stroke="#3b82f6" stroke-width="1.5"/>
+          <line x1="140" y1="90" x2="220" y2="90" stroke="#3b82f6" stroke-width="1.5"/>
+          
+          <text x="180" y="75" text-anchor="middle" font-size="11" font-weight="700" fill="#1e3a8a">API / E2E</text>
+          <text x="180" y="120" text-anchor="middle" font-size="11" font-weight="700" fill="#1e3a8a">Widget / UI</text>
+          <text x="180" y="170" text-anchor="middle" font-size="12" font-weight="700" fill="#1e3a8a">Unit Tests (Models &amp; Logic)</text>
+
+          <!-- AAA Workflow on the Right -->
+          <rect x="360" y="30" width="410" height="160" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+          <text x="565" y="55" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">The AAA Testing Pattern</text>
+
+          <rect x="380" y="75" width="105" height="90" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="432" y="105" text-anchor="middle" font-size="12" font-weight="700" fill="#1e40af">1. ARRANGE</text>
+          <text x="432" y="125" text-anchor="middle" font-size="10" fill="#475569">Set up test data,</text>
+          <text x="432" y="140" text-anchor="middle" font-size="10" fill="#475569">state &amp; mocks</text>
+
+          <line x1="485" y1="120" x2="505" y2="120" stroke="#1e3a8a" stroke-width="2" marker-end="url(#arrTest)"/>
+
+          <rect x="512" y="75" width="105" height="90" rx="8" fill="#ecfdf5" stroke="#059669" stroke-width="1.5"/>
+          <text x="564" y="105" text-anchor="middle" font-size="12" font-weight="700" fill="#065f46">2. ACT</text>
+          <text x="564" y="125" text-anchor="middle" font-size="10" fill="#475569">Execute function,</text>
+          <text x="564" y="140" text-anchor="middle" font-size="10" fill="#475569">tap UI or API call</text>
+
+          <line x1="617" y1="120" x2="637" y2="120" stroke="#1e3a8a" stroke-width="2" marker-end="url(#arrTest)"/>
+
+          <rect x="645" y="75" width="105" height="90" rx="8" fill="#fff7ed" stroke="#d97706" stroke-width="1.5"/>
+          <text x="697" y="105" text-anchor="middle" font-size="12" font-weight="700" fill="#92400e">3. ASSERT</text>
+          <text x="697" y="125" text-anchor="middle" font-size="10" fill="#475569">Verify outputs &amp;</text>
+          <text x="697" y="140" text-anchor="middle" font-size="10" fill="#475569">expect(a, b)</text>
+        </svg>
+      </div>
+
+      <h2>2. Scenario 1: Unit Testing Domain Models &amp; Business Rules</h2>
+      <p>Unit tests run in milliseconds, executing without rendering any widgets or calling a live network. They verify that JSON data maps accurately and business computations (e.g. <code>event.isFull</code>) are mathematically sound.</p>
+
+      <span class="file-pill">campus_event_app/test/unit/domain_models_test.dart</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>import 'package:flutter_test/flutter_test.dart';
+import 'package:campus_event_app/features/auth/models/user_model.dart';
+import 'package:campus_event_app/features/events/models/event_model.dart';
+
+void main() {
+  group('Domain Models & Business Rules', () {
+    test('UserModel.fromJson parses student role and attributes correctly', () {
+      // 1. Arrange: Sample JSON from PHP backend
+      final json = {
+        'id': 3,
+        'full_name': 'Aarav Patel',
+        'email': 'student@campus.edu',
+        'role': 'student',
+        'student_id_number': '24CE001',
+        'department': 'Computer Engineering',
+        'is_active': 1,
+      };
+
+      // 2. Act: Deserialize into typed object
+      final user = UserModel.fromJson(json);
+
+      // 3. Assert: Role helpers and field values
+      expect(user.id, 3);
+      expect(user.fullName, 'Aarav Patel');
+      expect(user.isStudent, isTrue);
+      expect(user.isOrganizer, isFalse);
+      expect(user.isAdmin, isFalse);
+      expect(user.studentIdNumber, '24CE001');
+    });
+
+    test('EventModel.fromJson computes isFull = true when capacity is reached', () {
+      // Arrange: registered_count == max_capacity
+      final json = {
+        'id': 1,
+        'organizer_id': 2,
+        'category_id': 1,
+        'title': 'HackCampus 2026',
+        'description': '24-hour hackathon',
+        'venue': 'Main Lab',
+        'start_time': '2026-12-05 09:00:00',
+        'end_time': '2026-12-06 12:00:00',
+        'max_capacity': 100,
+        'registered_count': 100,
+        'status': 'published',
+      };
+
+      // Act
+      final event = EventModel.fromJson(json);
+
+      // Assert
+      expect(event.isFull, isTrue);
+    });
+
+    test('EventModel.fromJson computes isFull = false when seats remain', () {
+      final json = {
+        'id': 2,
+        'organizer_id': 2,
+        'category_id': 5,
+        'title': 'Flutter Workshop',
+        'description': 'Riverpod masterclass',
+        'venue': 'Auditorium',
+        'start_time': '2026-12-10 10:00:00',
+        'end_time': '2026-12-10 16:00:00',
+        'max_capacity': 60,
+        'registered_count': 42,
+        'status': 'published',
+      };
+
+      final event = EventModel.fromJson(json);
+
+      expect(event.isFull, isFalse);
+    });
+  });
+}</code></pre></div>
+
+      <h2>3. Scenario 2: Riverpod State &amp; ViewModel Testing</h2>
+      <p>By using a <code>ProviderContainer</code>, you can test Riverpod <code>Notifier</code> state transitions (initial state &rarr; loading &rarr; success/error) in isolation without needing to launch a phone emulator.</p>
+
+      <span class="file-pill">campus_event_app/test/unit/auth_viewmodel_test.dart</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:campus_event_app/features/auth/viewmodels/auth_viewmodel.dart';
+
+void main() {
+  test('loginAsRole updates AuthState with user and marks isAuthenticated = true', () {
+    // 1. Arrange: Create an isolated Riverpod Container
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    // 2. Act: Call ViewModel method
+    container.read(authViewModelProvider.notifier).loginAsRole('student');
+    final state = container.read(authViewModelProvider);
+
+    // 3. Assert: State reflects logged-in student
+    expect(state.isAuthenticated, isTrue);
+    expect(state.currentUser?.role, 'student');
+    expect(state.currentUser?.email, 'student@campus.edu');
+    expect(state.errorMessage, isNull);
+  });
+}</code></pre></div>
+
+      <h2>4. Scenario 3: Widget Testing UI &amp; Form Validation</h2>
+      <p>Widget tests run against the Flutter widget engine to simulate user interactions: typing into text fields, clicking buttons, and asserting on rendered text and visual states. We use <code>ProviderScope(overrides: [...])</code> to replace live network viewmodels with deterministic test fakes.</p>
 
       <span class="file-pill">campus_event_app/test/widget_test.dart</span>
-      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>testWidgets('LoginScreen validates empty email and password', (tester) async {
-  await tester.pumpWidget(
-    ProviderScope(
-      overrides: [
-        authViewModelProvider.overrideWith(_FakeAuthViewModel.new),
-      ],
-      child: const MaterialApp(home: LoginScreen()),
-    ),
-  );
-  await tester.tap(find.text('Sign In'));
-  await tester.pump();
-  expect(find.text('Email is required'), findsOneWidget);
-  expect(find.text('Password is required'), findsOneWidget);
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:campus_event_app/core/widgets/event_card.dart';
+import 'package:campus_event_app/features/auth/viewmodels/auth_viewmodel.dart';
+import 'package:campus_event_app/features/auth/views/login_screen.dart';
+import 'package:campus_event_app/features/events/models/event_model.dart';
+
+// Test Fake for AuthViewModel
+class _FakeAuthViewModel extends AuthViewModel {
+  @override
+  AuthState build() => const AuthState(isInitialized: true);
+}
+
+void main() {
+  group('Widget Tests', () {
+    testWidgets('EventCard displays title, venue, and seat count', (WidgetTester tester) async {
+      // 1. Arrange: Create sample event model
+      const event = EventModel(
+        id: 1,
+        organizerId: 2,
+        categoryId: 1,
+        title: 'Campus Hackathon',
+        description: '24-hour coding challenge',
+        venue: 'Innovation Lab',
+        startTime: '2026-12-01 10:00:00',
+        endTime: '2026-12-02 10:00:00',
+        maxCapacity: 80,
+        registeredCount: 25,
+        status: 'published',
+        categoryName: 'Technical',
+      );
+
+      var tapped = false;
+
+      // 2. Act: Render the widget
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: EventCard(
+              event: event,
+              onTap: () => tapped = true,
+            ),
+          ),
+        ),
+      );
+
+      // 3. Assert: Widget text elements exist
+      expect(find.text('Campus Hackathon'), findsOneWidget);
+      expect(find.text('Innovation Lab'), findsOneWidget);
+      expect(find.text('25/80 seats'), findsOneWidget);
+
+      // Act: Simulate tap
+      await tester.tap(find.byType(EventCard));
+      expect(tapped, isTrue);
+    });
+
+    testWidgets('LoginScreen displays required validation errors on empty submission',
+        (WidgetTester tester) async {
+      // 1. Arrange: Wrap in ProviderScope with fake override
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authViewModelProvider.overrideWith(_FakeAuthViewModel.new),
+          ],
+          child: const MaterialApp(home: LoginScreen()),
+        ),
+      );
+
+      // 2. Act: Tap "Sign In" with empty fields
+      await tester.tap(find.text('Sign In'));
+      await tester.pump(); // Trigger frame rebuild
+
+      // 3. Assert: Validation messages appear on screen
+      expect(find.text('Email is required'), findsOneWidget);
+      expect(find.text('Password is required'), findsOneWidget);
+    });
+  });
+}</code></pre></div>
+
+      <h2>5. Scenario 4: Backend REST API Testing &amp; Status Code Matrix</h2>
+      <p>Backend API tests verify that the PHP server enforces schema validation, security tokens, role permissions, and database constraints. The table below outlines the core scenarios verified via Postman or automated test suites:</p>
+
+      <div class="table-wrap">
+        <table>
+          <tr>
+            <th>Scenario / Category</th>
+            <th>HTTP Request</th>
+            <th>Expected Status</th>
+            <th>Expected JSON Assertion</th>
+          </tr>
+          <tr>
+            <td><strong>Valid Login (Happy Path)</strong></td>
+            <td><code>POST /api/auth/login</code> with valid credentials</td>
+            <td><code>200 OK</code></td>
+            <td><code>data.token</code> is present and user role is returned.</td>
+          </tr>
+          <tr>
+            <td><strong>Invalid Password</strong></td>
+            <td><code>POST /api/auth/login</code> with incorrect password</td>
+            <td><code>401 Unauthorized</code></td>
+            <td><code>message: "Invalid credentials"</code></td>
+          </tr>
+          <tr>
+            <td><strong>Field Validation</strong></td>
+            <td><code>POST /api/events</code> with empty title or <code>end_time &lt; start_time</code></td>
+            <td><code>422 Unprocessable</code></td>
+            <td><code>errors</code> array lists specific validation failures.</td>
+          </tr>
+          <tr>
+            <td><strong>Missing Authentication</strong></td>
+            <td><code>GET /api/my-registrations</code> without <code>Authorization</code> header</td>
+            <td><code>401 Unauthorized</code></td>
+            <td><code>message: "Missing or invalid Bearer token"</code></td>
+          </tr>
+          <tr>
+            <td><strong>Role Authorization (RBAC)</strong></td>
+            <td><code>POST /api/events</code> using a Student token</td>
+            <td><code>403 Forbidden</code></td>
+            <td><code>message: "Insufficient permissions for this action"</code></td>
+          </tr>
+          <tr>
+            <td><strong>Duplicate Registration</strong></td>
+            <td><code>POST /api/events/1/register</code> twice for the same student</td>
+            <td><code>409 Conflict</code></td>
+            <td><code>message: "Already registered for this event"</code></td>
+          </tr>
+          <tr>
+            <td><strong>Max Capacity Enforced</strong></td>
+            <td><code>POST /api/events/{id}/register</code> on a full event</td>
+            <td><code>400 Bad Request</code></td>
+            <td><code>message: "Event has reached maximum capacity"</code></td>
+          </tr>
+          <tr>
+            <td><strong>Expired QR Token</strong></td>
+            <td><code>POST /api/attendance/verify</code> with token past <code>expires_at</code></td>
+            <td><code>400 Bad Request</code></td>
+            <td><code>message: "Attendance QR code has expired"</code></td>
+          </tr>
+        </table>
+      </div>
+
+      <h3>Example Postman Assertion Script</h3>
+      <p>Inside Postman &rarr; Request &rarr; <strong>Scripts &rarr; Post-response</strong> tab, write assertions that automatically validate responses:</p>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>// 1. Verify Status Code
+pm.test("Status code is 201 Created", function () {
+    pm.response.to.have.status(201);
+});
+
+// 2. Verify JSON Schema & Data
+pm.test("Response returns registration confirmation and ticket code", function () {
+    const json = pm.response.json();
+    pm.expect(json.status).to.eql("success");
+    pm.expect(json.data.registration).to.have.property("ticket_code");
+    pm.expect(json.data.registration.registration_status).to.eql("registered");
 });</code></pre></div>
 
-      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>cd campus_event_app
+      <h2>6. Running Tests Locally &amp; In CI</h2>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code># 1. Run Flutter Static Analysis (Zero warnings rule)
+cd campus_event_app
 flutter analyze
-flutter test --concurrency=1</code></pre></div>
-      <p>Import <code>postman/campus_event_api.postman_collection.json</code> and test all positive and negative cases in <code>docs/testing_guide.md</code>.</p>
+
+# 2. Run All Automated Flutter Tests
+flutter test --concurrency=1
+
+# 3. Verify All PHP 8 Syntax (Backend)
+cd ../campus_event_api
+Get-ChildItem -Filter *.php -Recurse | ForEach-Object { php -l $_.FullName }</code></pre></div>
+
+      <h2>Checkpoint</h2>
+      <ol>
+        <li>Why do we test <code>EventModel.fromJson</code> in a unit test rather than a widget test?</li>
+        <li>What is the purpose of <code>authViewModelProvider.overrideWith(...)</code> in widget tests?</li>
+        <li>Why should a duplicate event registration return HTTP <code>409 Conflict</code> instead of <code>500 Internal Server Error</code>?</li>
+      </ol>
+      <details>
+        <summary>Reveal Checkpoint Answers</summary>
+        <p><strong>1.</strong> Unit tests execute in a couple of milliseconds without spinning up Flutter's UI engine. They are fast, reliable, and test the pure calculation logic directly.</p>
+        <p><strong>2.</strong> It provides a mock/fake implementation of the ViewModel, allowing the widget to be tested in total isolation without hitting live network sockets or disk storage.</p>
+        <p><strong>3.</strong> A duplicate registration is a predictable, valid client conflict according to business rules—not an unexpected server crash! Returning <code>409 Conflict</code> allows the mobile app to display a clean, user-friendly message.</p>
+      </details>
     </div>
   </section>
 
