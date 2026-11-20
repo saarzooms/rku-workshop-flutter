@@ -2714,17 +2714,19 @@ if ($attRepo-&gt;findByRegistrationId((int) $registration['id']) !== null) {
   </section>
 
   <!-- ==================== CHAPTER 11 ==================== -->
-  <section class="chapter" data-title="11. Push Notifications" data-time="45 min">
+  <section class="chapter" data-title="11. Push Notifications" data-time="50 min">
     <div class="card">
       <div class="meta-row">
         <span class="badge">Chapter 11</span>
-        <span class="badge">Est. 45 min</span>
+        <span class="badge">Est. 50 min</span>
+        <span class="badge teal">Sprint 6: Push Notifications (FCM HTTP v1)</span>
       </div>
-      <h1>Sprint 6: Firebase Cloud Messaging (FCM HTTP v1)</h1>
-      <p><strong>Learning Objective:</strong> Register Android FCM device tokens with PHP and send event notifications from the backend using OAuth2 service accounts.</p>
+      <h1>Sprint 6: Firebase Cloud Messaging (FCM HTTP v1 API)</h1>
+      <p><strong>Learning Objective:</strong> Configure Firebase Cloud Messaging to deliver real-time push alerts to Android devices. Learn why we use Google's modern <strong>FCM HTTP v1 API</strong> (replacing deprecated legacy server keys), how to register Android device tokens from Flutter with PHP, and how the PHP backend signs Google OAuth2 JWTs to dispatch push notifications via cURL.</p>
 
       <div class="callout"><strong>Git Branch Checkpoint:</strong> <code>git checkout 07-push-notifications</code> | <strong>Previous State:</strong> QR attendance is verified. <strong>What Will Change:</strong> We integrate Firebase Cloud Messaging (FCM) to deliver real-time push alerts and reminders to Android devices.</div>
 
+      <h2>1. Push Notification Architecture &amp; Delivery Lifecycle</h2>
       <div class="diagram-box">
         <svg viewBox="0 0 800 130" width="100%" style="max-width:760px" role="img" aria-label="FCM Flow">
           <defs>
@@ -2733,7 +2735,7 @@ if ($attRepo-&gt;findByRegistrationId((int) $registration['id']) !== null) {
             </marker>
           </defs>
           <rect x="20" y="25" width="190" height="75" rx="10" fill="#eff6ff" stroke="#1e3a8a" stroke-width="1.5"/>
-          <text x="115" y="55" text-anchor="middle" font-weight="700" fill="#1e3a8a" font-size="13">Flutter App</text>
+          <text x="115" y="55" text-anchor="middle" font-weight="700" fill="#1e3a8a" font-size="13">Flutter App (Android)</text>
           <text x="115" y="75" text-anchor="middle" fill="#475569" font-size="11">Syncs fcm_token on login</text>
 
           <rect x="295" y="25" width="210" height="75" rx="10" fill="#0f172a"/>
@@ -2742,23 +2744,348 @@ if ($attRepo-&gt;findByRegistrationId((int) $registration['id']) !== null) {
 
           <rect x="590" y="25" width="190" height="75" rx="10" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
           <text x="685" y="55" text-anchor="middle" font-weight="700" fill="#c2410c" font-size="13">FCM HTTP v1 API</text>
-          <text x="685" y="75" text-anchor="middle" fill="#475569" font-size="11">Delivers Push to Android</text>
+          <text x="685" y="75" text-anchor="middle" fill="#475569" font-size="11">Delivers Push to Device</text>
 
           <line x1="210" y1="62" x2="293" y2="62" stroke="#ea580c" stroke-width="2" marker-end="url(#arr5)"/>
           <line x1="505" y1="62" x2="588" y2="62" stroke="#ea580c" stroke-width="2" marker-end="url(#arr5)"/>
         </svg>
       </div>
 
-      <h2>Setup Steps</h2>
+      <h2>2. Which Firebase Project Type is Needed?</h2>
+      <ul>
+        <li><strong>Console:</strong> Go to <a href="https://console.firebase.google.com/" target="_blank" rel="noopener">Firebase Console (console.firebase.google.com)</a>.</li>
+        <li><strong>Plan:</strong> The free <strong>Spark Plan</strong> is completely sufficient. Push notifications via FCM are 100% free with unlimited delivery volume.</li>
+        <li><strong>Services Needed:</strong> Only <strong>Firebase Cloud Messaging (FCM)</strong>. We <strong>do not</strong> need Firebase Authentication, Cloud Firestore, or Realtime Database because all user accounts, password hashes, and event data are securely managed in our self-hosted PHP 8 + MySQL database.</li>
+      </ul>
+
+      <h2>3. Step-by-Step Firebase Console Configuration</h2>
       <ol>
-        <li>Create a Firebase Project and register Android package <code>edu.campus.campus_event_app</code>.</li>
-        <li>Download <code>google-services.json</code> into <code>campus_event_app/android/app/google-services.json</code>.</li>
-        <li>Download Firebase Service Account JSON into <code>campus_event_api/storage/firebase-service-account.json</code> (never inside <code>public/</code> or Flutter!).</li>
-        <li>Set <code>FCM_PROJECT_ID</code> and <code>FCM_SERVICE_ACCOUNT_PATH</code> in <code>campus_event_api/.env</code>.</li>
+        <li>Click <strong>Add Project</strong> &rarr; Name it (e.g., <code>campus-event-system</code>) &rarr; Disable Google Analytics (optional) &rarr; Click <strong>Create Project</strong>.</li>
+        <li>In your project overview, click the <strong>Android</strong> icon to add an Android application.</li>
+        <li>
+          <strong>Enter Android Package Name:</strong>
+          <div class="code-wrap"><pre><code>edu.campus.campus_event_app</code></pre></div>
+          <em>(Must match <code>applicationId</code> in <code>campus_event_app/android/app/build.gradle.kts</code>)</em>
+        </li>
+        <li>Click <strong>Register App</strong>.</li>
+        <li>
+          <strong>Download Client Configuration:</strong> Download the generated <code>google-services.json</code> file.
+        </li>
+        <li>
+          <strong>Download Server Service Account (Private Key):</strong>
+          <ul>
+            <li>Click the <strong>Gear Icon (⚙️ Project Settings)</strong> at the top left.</li>
+            <li>Go to the <strong>Service accounts</strong> tab.</li>
+            <li>Select <strong>Firebase Admin SDK</strong>.</li>
+            <li>Click <strong>Generate new private key</strong> &rarr; Click <strong>Generate Key</strong> to download the JSON file.</li>
+          </ul>
+        </li>
+      </ol>
+
+      <h2>4. Folder Structure &amp; File Placements</h2>
+      <p>Place the downloaded credential files into these exact folders:</p>
+
+      <div class="table-wrap">
+        <table>
+          <tr>
+            <th>Credential File</th>
+            <th>Target Folder / Destination Path</th>
+            <th>Purpose</th>
+          </tr>
+          <tr>
+            <td><code>google-services.json</code></td>
+            <td><code>campus_event_app/android/app/google-services.json</code></td>
+            <td>Client-side Android SDK configuration containing the Firebase project number, app ID, and API keys.</td>
+          </tr>
+          <tr>
+            <td><code>firebase-service-account.json</code></td>
+            <td><code>campus_event_api/storage/firebase-service-account.json</code></td>
+            <td>Server-side OAuth2 RSA private key used by PHP to sign JWT assertions and authenticate with the FCM HTTP v1 API.</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="callout" style="border-left-color: #dc2626; background: #fef2f2;">
+        <strong style="color: #991b1b;">Security Rule:</strong> Never place <code>firebase-service-account.json</code> inside the mobile application or inside <code>campus_event_api/public/</code>. It must live in <code>storage/</code> (outside the web root), protected by <code>.gitignore</code>.
+      </div>
+
+      <h2>5. Client-Side Setup (Flutter / Android)</h2>
+
+      <h3>A. Configure Gradle Plugins</h3>
+      <p>In <code>campus_event_app/android/build.gradle.kts</code>, ensure the Google Services Gradle plugin dependency is registered:</p>
+      <span class="file-pill">campus_event_app/android/build.gradle.kts</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>buildscript {
+    dependencies {
+        classpath("com.google.gms:google-services:4.4.2")
+    }
+}</code></pre></div>
+
+      <p>In <code>campus_event_app/android/app/build.gradle.kts</code>, apply the Google Services plugin at the top:</p>
+      <span class="file-pill">campus_event_app/android/app/build.gradle.kts</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>plugins {
+    id("com.android.application")
+    id("kotlin-android")
+    id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services") // &lt;-- Applies google-services.json
+}</code></pre></div>
+
+      <h3>B. Android 13+ Notification Permission</h3>
+      <p>Starting with Android 13 (API level 33), apps must request runtime permission to display notifications. Ensure your <code>AndroidManifest.xml</code> includes:</p>
+      <span class="file-pill">campus_event_app/android/app/src/main/AndroidManifest.xml</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>&lt;manifest xmlns:android="http://schemas.android.com/apk/res/android"&gt;
+    &lt;uses-permission android:name="android.permission.INTERNET"/&gt;
+    &lt;uses-permission android:name="android.permission.POST_NOTIFICATIONS"/&gt;
+    &lt;application ...&gt;
+        ...
+    &lt;/application&gt;
+&lt;/manifest&gt;</code></pre></div>
+
+      <h3>C. Flutter FCM Service Implementation</h3>
+      <p>This service requests permissions, handles background and foreground message listeners, extracts the device token, and synchronizes it with our PHP backend upon login.</p>
+
+      <span class="file-pill">campus_event_app/lib/features/notifications/services/fcm_service.dart</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
+
+import '../../../core/constants/api_constants.dart';
+import '../../../core/network/api_client.dart';
+
+@pragma('vm:entry-point')
+Future&lt;void&gt; firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Handled in system notification tray when notification payload is present
+  debugPrint('FCM background message: ${message.messageId}');
+}
+
+class FcmNotificationService {
+  FcmNotificationService(this._apiClient);
+
+  final ApiClient _apiClient;
+  bool _initialized = false;
+
+  Future&lt;void&gt; initialize({
+    void Function(String title, String body)? onForegroundMessage,
+    void Function(String? eventId)? onNotificationTap,
+  }) async {
+    if (_initialized) return;
+    try {
+      await Firebase.initializeApp();
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+      final messaging = FirebaseMessaging.instance;
+      
+      // Request user permission (essential for iOS and Android 13+)
+      final settings = await messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        // Retrieve device registration token
+        final token = await messaging.getToken();
+        if (token != null && token.isNotEmpty) {
+          await _registerTokenWithBackend(token);
+        }
+
+        // Listen for token refreshes
+        messaging.onTokenRefresh.listen(_registerTokenWithBackend);
+      }
+
+      // 1. Foreground Notifications (App is actively open)
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        final title = message.notification?.title ?? 'Campus Event Alert';
+        final body = message.notification?.body ?? '';
+        onForegroundMessage?.call(title, body);
+      });
+
+      // 2. Notification Tap Handling (App in background)
+      FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+        final eventId = message.data['event_id']?.toString();
+        onNotificationTap?.call(eventId);
+      });
+
+      _initialized = true;
+    } catch (e) {
+      debugPrint('FCM initialization skipped or failed: $e');
+    }
+  }
+
+  Future&lt;void&gt; _registerTokenWithBackend(String fcmToken) async {
+    try {
+      await _apiClient.post(
+        ApiConstants.deviceToken,
+        body: {'fcm_token': fcmToken, 'platform': 'android'},
+      );
+    } catch (e) {
+      debugPrint('Failed to sync FCM token with PHP: $e');
+    }
+  }
+}</code></pre></div>
+
+      <h2>6. Server-Side Setup (PHP 8 &amp; Google OAuth2)</h2>
+
+      <h3>A. Configure Environment (.env)</h3>
+      <p>Add your Firebase Project ID and relative path to the service account JSON in <code>campus_event_api/.env</code>:</p>
+      <span class="file-pill">campus_event_api/.env</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code># Firebase Cloud Messaging (HTTP v1)
+FCM_PROJECT_ID=campus-event-system-12345
+FCM_SERVICE_ACCOUNT_PATH=../storage/firebase-service-account.json</code></pre></div>
+
+      <h3>B. Pure PHP OAuth2 JWT Signing &amp; FCM Dispatcher</h3>
+      <p>Instead of requiring massive Google SDKs, our lightweight <code>FcmService</code> signs a Google OAuth2 JWT assertion using PHP's native <code>openssl_sign</code> with RS256, exchanges it for a 1-hour access token, and dispatches push payloads via cURL.</p>
+
+      <span class="file-pill">campus_event_api/app/Services/FcmService.php</span>
+      <div class="code-wrap"><button class="copy-btn">Copy</button><pre><code>&lt;?php
+
+declare(strict_types=1);
+
+namespace App\Services;
+
+use App\Config\Env;
+
+final class FcmService
+{
+    public function sendToTokens(array $tokens, string $title, string $body, array $data = []): array
+    {
+        if ($tokens === []) {
+            return ['sent' => 0, 'failed' => 0, 'configured' => true, 'note' => 'No device tokens registered'];
+        }
+
+        $projectId = Env::get('FCM_PROJECT_ID', '');
+        $serviceAccountPath = Env::get('FCM_SERVICE_ACCOUNT_PATH', '');
+
+        if ($projectId === '' || $serviceAccountPath === '' || !is_file($serviceAccountPath)) {
+            return [
+                'sent' => 0,
+                'failed' => 0,
+                'configured' => false,
+                'note' => 'FCM service account not configured; notification logged in database only.',
+            ];
+        }
+
+        $accessToken = $this->getGoogleAccessToken($serviceAccountPath);
+        if ($accessToken === null) {
+            return ['sent' => 0, 'failed' => count($tokens), 'configured' => false, 'note' => 'Failed to obtain Google OAuth2 token'];
+        }
+
+        $endpoint = "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send";
+        $sent = 0;
+        $failed = 0;
+
+        foreach ($tokens as $token) {
+            $payload = json_encode([
+                'message' => [
+                    'token' => $token,
+                    'notification' => [
+                        'title' => $title,
+                        'body' => $body,
+                    ],
+                    'data' => array_map('strval', $data),
+                ],
+            ]);
+
+            $ch = curl_init($endpoint);
+            curl_setopt_array($ch, [
+                CURLOPT_POST => true,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HTTPHEADER => [
+                    'Authorization: Bearer ' . $accessToken,
+                    'Content-Type: application/json',
+                ],
+                CURLOPT_POSTFIELDS => $payload,
+                CURLOPT_TIMEOUT => 10,
+            ]);
+            curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($httpCode >= 200 && $httpCode < 300) {
+                $sent++;
+            } else {
+                $failed++;
+            }
+        }
+
+        return ['sent' => $sent, 'failed' => $failed, 'configured' => true];
+    }
+
+    private function getGoogleAccessToken(string $serviceAccountPath): ?string
+    {
+        $json = json_decode((string) file_get_contents($serviceAccountPath), true);
+        if (!is_array($json) || empty($json['client_email']) || empty($json['private_key'])) {
+            return null;
+        }
+
+        $now = time();
+        $header = $this->base64UrlEncode(json_encode(['alg' => 'RS256', 'typ' => 'JWT']));
+        $claim = $this->base64UrlEncode(json_encode([
+            'iss' => $json['client_email'],
+            'scope' => 'https://www.googleapis.com/auth/firebase.messaging',
+            'aud' => 'https://oauth2.googleapis.com/token',
+            'iat' => $now,
+            'exp' => $now + 3600,
+        ]));
+
+        $signature = '';
+        if (!openssl_sign("{$header}.{$claim}", $signature, $json['private_key'], OPENSSL_ALGO_SHA256)) {
+            return null;
+        }
+
+        $jwt = "{$header}.{$claim}." . $this->base64UrlEncode($signature);
+        $ch = curl_init('https://oauth2.googleapis.com/token');
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POSTFIELDS => http_build_query([
+                'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+                'assertion' => $jwt,
+            ]),
+            CURLOPT_TIMEOUT => 10,
+        ]);
+        $resp = curl_exec($ch);
+        curl_close($ch);
+
+        $decoded = json_decode((string) $resp, true);
+        return $decoded['access_token'] ?? null;
+    }
+
+    private function base64UrlEncode(string $data): string
+    {
+        return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+    }
+}</code></pre></div>
+
+      <h2>7. Verification &amp; Testing Checklist</h2>
+      <ol>
+        <li><strong>Verify Token Sync:</strong> Run Flutter on an Android device or Google Play emulator. Sign in as <code>student@campus.edu</code>. Check the database: <code>SELECT id, full_name, fcm_token FROM users WHERE id=3;</code>. The <code>fcm_token</code> column should now be populated.</li>
+        <li><strong>Trigger Push from Postman:</strong> In Postman, call:
+          <div class="code-wrap"><pre><code>POST /api/notifications/send
+Authorization: Bearer &lt;organizer_token&gt;
+Content-Type: application/json
+
+{
+    "event_id": 1,
+    "title": "HackCampus 2026 Starting Soon!",
+    "body": "Opening ceremony begins in 30 minutes at Main Auditorium."
+}</code></pre></div>
+        </li>
+        <li><strong>Foreground Notification:</strong> If the app is open on the screen, a SnackBar banner appears with the message.</li>
+        <li><strong>Background Notification:</strong> Press the device Home button to minimize the app. Trigger the notification again. An Android system notification banner appears in the notification shade.</li>
+        <li><strong>Tap Action:</strong> Tapping the notification automatically routes GoRouter directly to <code>/events/1</code>.</li>
+      </ol>
+
+      <h2>Checkpoint</h2>
+      <ol>
+        <li>Why does the PHP backend use the modern FCM HTTP v1 API instead of the deprecated legacy FCM server key?</li>
+        <li>Where must <code>google-services.json</code> and <code>firebase-service-account.json</code> be stored, and why are they kept strictly separate?</li>
+        <li>Why does Android 13 require the <code>POST_NOTIFICATIONS</code> permission in <code>AndroidManifest.xml</code>?</li>
       </ol>
       <details>
-        <summary>Optional Alternatives: Firebase Auth &amp; Cloud Firestore</summary>
-        <p>Firebase Auth and Firestore are great for serverless prototypes, but are intentionally <strong>not</strong> dependencies here so beginners learn relational SQL constraints and REST API security.</p>
+        <summary>Reveal Checkpoint Answers</summary>
+        <p><strong>1.</strong> Google permanently deprecated legacy FCM API server keys in June 2024. The HTTP v1 API uses short-lived Google OAuth2 tokens with fine-grained IAM permissions and stronger cryptographic security.</p>
+        <p><strong>2.</strong> <code>google-services.json</code> is a client configuration file placed in <code>campus_event_app/android/app/</code>. In contrast, <code>firebase-service-account.json</code> contains private server cryptographic keys and must <strong>only</strong> live in <code>campus_event_api/storage/</code> (outside the web root). Storing the service account key inside the mobile app would allow any user to decompile the APK and hijack the entire Firebase project.</p>
+        <p><strong>3.</strong> Android 13 introduced runtime notification permissions to protect user privacy and stop unwanted spam. Apps must request explicit permission before showing notifications in the system tray.</p>
       </details>
     </div>
   </section>
